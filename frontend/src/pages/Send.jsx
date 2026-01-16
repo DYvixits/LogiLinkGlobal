@@ -152,6 +152,7 @@ export default function Send() {
                           <p className="text-sm font-bold text-slate-500 uppercase">Adresse de dépôt (Fixe)</p>
                           <p className="font-heading text-2xl font-bold text-slate-900">{FIXED_ITALY_ADDRESS.name}</p>
                           <p className="font-mono text-slate-700">{FIXED_ITALY_ADDRESS.full_address}</p>
+                          <p className="font-mono text-slate-700 font-bold">{FIXED_ITALY_ADDRESS.phone}</p>
                       </div>
                       <div className="space-y-1">
                           <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Complément d'adresse (Optionnel)</label>
