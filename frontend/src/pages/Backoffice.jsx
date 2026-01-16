@@ -311,9 +311,11 @@ export default function Backoffice() {
                                 <TableHeader>
                                     <TableRow>
                                         <TableHead className="w-[40px]">
-                                            <Checkbox 
+                                            <input 
+                                                type="checkbox"
+                                                className="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900"
                                                 checked={selectedParcels.length === filteredParcels.length && filteredParcels.length > 0}
-                                                onCheckedChange={handleSelectAll}
+                                                onChange={(e) => handleSelectAll(e.target.checked)}
                                             />
                                         </TableHead>
                                         <TableHead>ID & Info</TableHead>
@@ -328,9 +330,11 @@ export default function Backoffice() {
                                     {filteredParcels.map((p) => (
                                         <TableRow key={p.tracking_id} className={selectedParcels.includes(p.tracking_id) ? "bg-slate-50" : ""}>
                                             <TableCell>
-                                                <Checkbox 
+                                                <input 
+                                                    type="checkbox"
+                                                    className="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900"
                                                     checked={selectedParcels.includes(p.tracking_id)}
-                                                    onCheckedChange={(c) => handleSelectOne(p.tracking_id, c)}
+                                                    onChange={(e) => handleSelectOne(p.tracking_id, e.target.checked)}
                                                 />
                                             </TableCell>
                                             <TableCell>
