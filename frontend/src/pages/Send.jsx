@@ -3,10 +3,12 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Header } from '../components/ui/Header';
 import { ArrowLeft, Check, Download, Loader2 } from 'lucide-react';
 import axios from 'axios';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
 export default function Send() {
+  const { t } = useLanguage();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const direction = searchParams.get('dir') || 'EU_TO_CM';
@@ -105,8 +107,8 @@ export default function Send() {
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
                  <Check className="h-8 w-8 text-green-600" />
               </div>
-              <h2 className="text-3xl font-heading font-bold mb-2">COLIS ENREGISTRÉ !</h2>
-              <p className="text-slate-600 mb-8">Votre numéro de suivi est : <span className="font-mono font-bold text-slate-900 bg-slate-100 px-2 py-1">{successData.tracking_id}</span></p>
+              <h2 className="text-3xl font-heading font-bold mb-2">{t('success_title')}</h2>
+              <p className="text-slate-600 mb-8">{t('your_tracking_id')} <span className="font-mono font-bold text-slate-900 bg-slate-100 px-2 py-1">{successData.tracking_id}</span></p>
               
               <div className="space-y-4">
                  <a 
@@ -114,15 +116,15 @@ export default function Send() {
                     target="_blank"
                     className="flex items-center justify-center gap-2 w-full bg-accent text-white font-bold uppercase py-4 hover:bg-orange-700 transition-colors"
                  >
-                    <Download className="h-5 w-5" /> Télécharger le Ticket
+                    <Download className="h-5 w-5" /> {t('download_ticket')}
                  </a>
                  <button onClick={() => navigate('/')} className="w-full text-slate-500 font-medium hover:text-slate-900">
-                    Retour à l'accueil
+                    {t('back_home')}
                  </button>
               </div>
               
               <p className="mt-8 text-xs text-slate-400 max-w-xs mx-auto">
-                 Veuillez imprimer ce ticket et le coller sur votre colis avant de le déposer au point de collecte.
+                 {t('print_instruction')}
               </p>
            </div>
         </div>
@@ -135,27 +137,27 @@ export default function Send() {
       
       <div className="container py-12 max-w-3xl">
         <button onClick={() => navigate('/')} className="flex items-center gap-2 text-slate-500 hover:text-slate-900 mb-8 font-medium">
-           <ArrowLeft className="h-4 w-4" /> Retour
+           <ArrowLeft className="h-4 w-4" /> {t('back')}
         </button>
       
-        <h1 className="text-4xl font-heading font-bold mb-2">ENREGISTRER UN COLIS</h1>
-        <p className="text-slate-600 mb-8 font-medium">Direction: {direction === 'EU_TO_CM' ? 'EUROPE -> CAMEROUN' : 'CAMEROUN -> EUROPE'}</p>
+        <h1 className="text-4xl font-heading font-bold mb-2">{t('register_parcel')}</h1>
+        <p className="text-slate-600 mb-8 font-medium">Direction: {direction === 'EU_TO_CM' ? t('direction_eu_cm') : t('direction_cm_eu')}</p>
         
         <form onSubmit={handleSubmit} className="bg-white border border-slate-200 p-8 shadow-sm">
            
            {/* Section Expéditeur */}
            <div className="mb-8">
-              <h3 className="font-heading text-xl font-bold bg-slate-100 p-2 border-l-4 border-slate-900 mb-4">1. EXPÉDITEUR</h3>
+              <h3 className="font-heading text-xl font-bold bg-slate-100 p-2 border-l-4 border-slate-900 mb-4">{t('sender')}</h3>
               {isItalySide('sender') ? (
                   <div className="bg-slate-50 p-6 border-2 border-slate-200 border-dashed">
                       <div className="mb-4">
-                          <p className="text-sm font-bold text-slate-500 uppercase">Adresse de dépôt (Fixe)</p>
+                          <p className="text-sm font-bold text-slate-500 uppercase">{t('fixed_address_depot')}</p>
                           <p className="font-heading text-2xl font-bold text-slate-900">{FIXED_ITALY_ADDRESS.name}</p>
                           <p className="font-mono text-slate-700">{FIXED_ITALY_ADDRESS.full_address}</p>
                           <p className="font-mono text-slate-700 font-bold">{FIXED_ITALY_ADDRESS.phone}</p>
                       </div>
                       <div className="space-y-1">
-                          <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Complément d'adresse (Optionnel)</label>
+                          <label className="text-xs font-bold uppercase tracking-wider text-slate-500">{t('complement_addr')}</label>
                           <input type="text" placeholder="Ex: Batiment B, Etage 2..." className="w-full border-2 border-slate-200 p-3 focus:border-slate-900 outline-none font-medium"
                              value={complement} onChange={e => handleComplementChange(e.target.value)} />
                       </div>
@@ -163,17 +165,17 @@ export default function Send() {
               ) : (
                   <div className="grid md:grid-cols-2 gap-4">
                      <div className="space-y-1">
-                        <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Nom Complet</label>
+                        <label className="text-xs font-bold uppercase tracking-wider text-slate-500">{t('name')}</label>
                         <input required type="text" className="w-full border-2 border-slate-200 p-3 focus:border-slate-900 outline-none font-medium" 
                            value={formData.sender.name} onChange={e => handleChange('sender', 'name', e.target.value)} />
                      </div>
                      <div className="space-y-1">
-                        <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Téléphone</label>
+                        <label className="text-xs font-bold uppercase tracking-wider text-slate-500">{t('phone')}</label>
                         <input required type="tel" className="w-full border-2 border-slate-200 p-3 focus:border-slate-900 outline-none font-medium" 
                            value={formData.sender.phone} onChange={e => handleChange('sender', 'phone', e.target.value)} />
                      </div>
                      <div className="space-y-1 md:col-span-2">
-                        <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Ville & Adresse</label>
+                        <label className="text-xs font-bold uppercase tracking-wider text-slate-500">{t('city_address')}</label>
                         <input required type="text" className="w-full border-2 border-slate-200 p-3 focus:border-slate-900 outline-none font-medium" 
                            value={formData.sender.city} onChange={e => handleChange('sender', 'city', e.target.value)} />
                      </div>
@@ -183,17 +185,17 @@ export default function Send() {
 
            {/* Section Destinataire */}
            <div className="mb-8">
-              <h3 className="font-heading text-xl font-bold bg-slate-100 p-2 border-l-4 border-accent mb-4">2. DESTINATAIRE</h3>
+              <h3 className="font-heading text-xl font-bold bg-slate-100 p-2 border-l-4 border-accent mb-4">{t('receiver')}</h3>
               {isItalySide('receiver') ? (
                   <div className="bg-slate-50 p-6 border-2 border-slate-200 border-dashed">
                       <div className="mb-4">
-                          <p className="text-sm font-bold text-slate-500 uppercase">Adresse de réception (Fixe)</p>
+                          <p className="text-sm font-bold text-slate-500 uppercase">{t('fixed_address_receipt')}</p>
                           <p className="font-heading text-2xl font-bold text-slate-900">{FIXED_ITALY_ADDRESS.name}</p>
                           <p className="font-mono text-slate-700">{FIXED_ITALY_ADDRESS.full_address}</p>
                           <p className="font-mono text-slate-700 font-bold">{FIXED_ITALY_ADDRESS.phone}</p>
                       </div>
                       <div className="space-y-1">
-                          <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Complément d'adresse (Optionnel)</label>
+                          <label className="text-xs font-bold uppercase tracking-wider text-slate-500">{t('complement_addr')}</label>
                           <input type="text" placeholder="Ex: Batiment B, Etage 2..." className="w-full border-2 border-slate-200 p-3 focus:border-slate-900 outline-none font-medium"
                              value={complement} onChange={e => handleComplementChange(e.target.value)} />
                       </div>
@@ -201,17 +203,17 @@ export default function Send() {
               ) : (
                   <div className="grid md:grid-cols-2 gap-4">
                      <div className="space-y-1">
-                        <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Nom Complet</label>
+                        <label className="text-xs font-bold uppercase tracking-wider text-slate-500">{t('name')}</label>
                         <input required type="text" className="w-full border-2 border-slate-200 p-3 focus:border-slate-900 outline-none font-medium" 
                            value={formData.receiver.name} onChange={e => handleChange('receiver', 'name', e.target.value)} />
                      </div>
                      <div className="space-y-1">
-                        <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Téléphone</label>
+                        <label className="text-xs font-bold uppercase tracking-wider text-slate-500">{t('phone')}</label>
                         <input required type="tel" className="w-full border-2 border-slate-200 p-3 focus:border-slate-900 outline-none font-medium" 
                            value={formData.receiver.phone} onChange={e => handleChange('receiver', 'phone', e.target.value)} />
                      </div>
                      <div className="space-y-1 md:col-span-2">
-                        <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Ville & Adresse</label>
+                        <label className="text-xs font-bold uppercase tracking-wider text-slate-500">{t('city_address')}</label>
                         <input required type="text" className="w-full border-2 border-slate-200 p-3 focus:border-slate-900 outline-none font-medium" 
                            value={formData.receiver.city} onChange={e => handleChange('receiver', 'city', e.target.value)} />
                      </div>
@@ -221,15 +223,15 @@ export default function Send() {
 
            {/* Détails */}
            <div className="mb-8">
-              <h3 className="font-heading text-xl font-bold bg-slate-100 p-2 border-l-4 border-slate-400 mb-4">3. COLIS</h3>
+              <h3 className="font-heading text-xl font-bold bg-slate-100 p-2 border-l-4 border-slate-400 mb-4">{t('parcel_info')}</h3>
               <div className="space-y-4">
                  <div className="space-y-1">
-                    <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Description du contenu</label>
+                    <label className="text-xs font-bold uppercase tracking-wider text-slate-500">{t('content_desc')}</label>
                     <textarea required rows="3" className="w-full border-2 border-slate-200 p-3 focus:border-slate-900 outline-none font-medium" 
                        value={formData.content_description} onChange={e => handleChange(null, 'content_description', e.target.value)} />
                  </div>
                  <div className="space-y-1">
-                    <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Date de dépôt prévue</label>
+                    <label className="text-xs font-bold uppercase tracking-wider text-slate-500">{t('dep_date')}</label>
                     <input required type="date" className="w-full border-2 border-slate-200 p-3 focus:border-slate-900 outline-none font-medium" 
                        value={formData.departure_date} onChange={e => handleChange(null, 'departure_date', e.target.value)} />
                  </div>
@@ -237,7 +239,7 @@ export default function Send() {
            </div>
            
            <button disabled={loading} type="submit" className="w-full bg-slate-900 text-white font-bold py-4 text-lg hover:bg-slate-800 transition-colors uppercase tracking-widest flex items-center justify-center gap-2">
-              {loading ? <Loader2 className="animate-spin" /> : 'Générer mon ticket'}
+              {loading ? <Loader2 className="animate-spin" /> : t('generate_ticket')}
            </button>
 
         </form>

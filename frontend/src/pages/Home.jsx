@@ -3,10 +3,12 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, Calendar, CheckCircle2, MapPin, Package, Search } from 'lucide-react';
 import { Header } from '../components/ui/Header';
 import axios from 'axios';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
 export default function Home() {
+  const { t } = useLanguage();
   const [schedule, setSchedule] = useState({ eu_to_cm: [], cm_to_eu: [] });
   const [trackId, setTrackId] = useState("");
   const navigate = useNavigate();
@@ -40,17 +42,17 @@ export default function Home() {
         <div className="container relative z-10 grid lg:grid-cols-2 gap-12 items-center">
           <div className="space-y-8">
             <h1 className="text-5xl md:text-7xl font-heading font-bold text-white leading-tight">
-              LIAISON DIRECTE <br/>
-              <span className="text-accent">EUROPE - CAMEROUN</span>
+              {t('hero_title_1')} <br/>
+              <span className="text-accent">{t('hero_title_2')}</span>
             </h1>
             <p className="text-xl text-slate-300 max-w-lg">
-              La solution logistique fiable, sans inscription. Déposez, on s'occupe du reste. Départs hebdomadaires garantis.
+              {t('hero_subtitle')}
             </p>
             
             <form onSubmit={handleTrack} className="flex max-w-md bg-white p-1">
               <input 
                 type="text" 
-                placeholder="N° DE SUIVI (ex: LOGI-123456)" 
+                placeholder={t('track_placeholder')}
                 className="flex-1 bg-transparent border-none px-4 py-3 focus:ring-0 text-slate-900 placeholder:text-slate-400 font-mono"
                 value={trackId}
                 onChange={(e) => setTrackId(e.target.value)}
@@ -64,19 +66,19 @@ export default function Home() {
           {/* Status Board - Right Side */}
           <div className="bg-white/10 backdrop-blur-md border border-white/20 p-8 text-white">
             <h3 className="font-heading text-2xl mb-6 flex items-center gap-2">
-              <Calendar className="text-accent" /> PROCHAINS DÉPARTS
+              <Calendar className="text-accent" /> {t('next_departures')}
             </h3>
             
             <div className="space-y-6">
               <div>
                 <div className="flex justify-between items-center mb-2">
-                  <span className="font-bold flex items-center gap-2"><MapPin className="h-4 w-4"/> EUROPE &rarr; CAMEROUN</span>
-                  <span className="text-xs bg-accent px-2 py-1 uppercase font-bold">Vendredis</span>
+                  <span className="font-bold flex items-center gap-2"><MapPin className="h-4 w-4"/> {t('direction_eu_cm')}</span>
+                  <span className="text-xs bg-accent px-2 py-1 uppercase font-bold">Fri</span>
                 </div>
                 <div className="grid grid-cols-4 gap-2">
                    {schedule.eu_to_cm.slice(0,4).map((date, i) => (
                       <div key={i} className="bg-white/10 p-2 text-center text-sm font-mono border border-white/10">
-                        {new Date(date).toLocaleDateString('fr-FR', {day: '2-digit', month: '2-digit'})}
+                        {new Date(date).toLocaleDateString()}
                       </div>
                    ))}
                 </div>
@@ -84,13 +86,13 @@ export default function Home() {
               
               <div>
                 <div className="flex justify-between items-center mb-2">
-                  <span className="font-bold flex items-center gap-2"><MapPin className="h-4 w-4"/> CAMEROUN &rarr; EUROPE</span>
-                  <span className="text-xs bg-slate-700 px-2 py-1 uppercase font-bold">Samedis</span>
+                  <span className="font-bold flex items-center gap-2"><MapPin className="h-4 w-4"/> {t('direction_cm_eu')}</span>
+                  <span className="text-xs bg-slate-700 px-2 py-1 uppercase font-bold">Sat</span>
                 </div>
                 <div className="grid grid-cols-4 gap-2">
                    {schedule.cm_to_eu.slice(0,4).map((date, i) => (
                       <div key={i} className="bg-white/10 p-2 text-center text-sm font-mono border border-white/10">
-                        {new Date(date).toLocaleDateString('fr-FR', {day: '2-digit', month: '2-digit'})}
+                        {new Date(date).toLocaleDateString()}
                       </div>
                    ))}
                 </div>
@@ -107,18 +109,18 @@ export default function Home() {
             <Link to="/send?dir=EU_TO_CM" className="group relative h-64 bg-slate-100 hover:bg-slate-900 transition-all duration-500 overflow-hidden border-2 border-slate-200 hover:border-slate-900 flex flex-col justify-center items-center text-center p-8">
               <div className="absolute inset-0 bg-[url('https://images.pexels.com/photos/4484078/pexels-photo-4484078.jpeg')] bg-cover bg-center opacity-0 group-hover:opacity-20 transition-opacity duration-500" />
               <div className="z-10">
-                 <h2 className="text-4xl font-heading font-bold text-slate-900 group-hover:text-white mb-2 transition-colors">JE VEUX ENVOYER</h2>
-                 <p className="text-lg text-slate-600 group-hover:text-slate-300 font-medium mb-6 transition-colors">DE L'EUROPE VERS LE CAMEROUN</p>
-                 <span className="inline-flex items-center gap-2 text-accent font-bold uppercase tracking-widest border-b-2 border-accent pb-1">Commencer <ArrowRight className="h-4 w-4"/></span>
+                 <h2 className="text-4xl font-heading font-bold text-slate-900 group-hover:text-white mb-2 transition-colors">{t('want_to_send')}</h2>
+                 <p className="text-lg text-slate-600 group-hover:text-slate-300 font-medium mb-6 transition-colors">{t('eu_to_cm')}</p>
+                 <span className="inline-flex items-center gap-2 text-accent font-bold uppercase tracking-widest border-b-2 border-accent pb-1">{t('start_button')} <ArrowRight className="h-4 w-4"/></span>
               </div>
             </Link>
 
             <Link to="/send?dir=CM_TO_EU" className="group relative h-64 bg-slate-100 hover:bg-slate-900 transition-all duration-500 overflow-hidden border-2 border-slate-200 hover:border-slate-900 flex flex-col justify-center items-center text-center p-8">
                <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1761926002909-781a45b71030')] bg-cover bg-center opacity-0 group-hover:opacity-20 transition-opacity duration-500" />
                <div className="z-10">
-                 <h2 className="text-4xl font-heading font-bold text-slate-900 group-hover:text-white mb-2 transition-colors">JE VEUX ENVOYER</h2>
-                 <p className="text-lg text-slate-600 group-hover:text-slate-300 font-medium mb-6 transition-colors">DU CAMEROUN VERS L'EUROPE</p>
-                 <span className="inline-flex items-center gap-2 text-accent font-bold uppercase tracking-widest border-b-2 border-accent pb-1">Commencer <ArrowRight className="h-4 w-4"/></span>
+                 <h2 className="text-4xl font-heading font-bold text-slate-900 group-hover:text-white mb-2 transition-colors">{t('want_to_send')}</h2>
+                 <p className="text-lg text-slate-600 group-hover:text-slate-300 font-medium mb-6 transition-colors">{t('cm_to_eu')}</p>
+                 <span className="inline-flex items-center gap-2 text-accent font-bold uppercase tracking-widest border-b-2 border-accent pb-1">{t('start_button')} <ArrowRight className="h-4 w-4"/></span>
                </div>
             </Link>
           </div>
@@ -126,7 +128,7 @@ export default function Home() {
       </section>
 
       <footer className="mt-auto py-12 bg-slate-900 text-slate-400 text-center">
-        <p className="font-mono text-sm">LOGILINK GLOBAL &copy; 2025. TRANSPORT MARITIME ET AÉRIEN.</p>
+        <p className="font-mono text-sm">{t('footer_text')}</p>
       </footer>
     </div>
   );

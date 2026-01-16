@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Package, Lock, User, Loader2, Info } from 'lucide-react';
+import { Package, Lock, User, Loader2, Info, Globe } from 'lucide-react';
 import { toast } from 'sonner';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
 export default function Login() {
+  const { t, language, toggleLanguage } = useLanguage();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -37,20 +39,29 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4 relative">
+      <div className="absolute top-4 right-4 z-10">
+         <button 
+            onClick={toggleLanguage}
+            className="flex items-center gap-1 text-sm font-bold uppercase bg-white/10 text-white px-3 py-2 rounded hover:bg-white/20 transition-colors"
+          >
+            <Globe className="h-4 w-4" /> {language === 'fr' ? 'Français' : 'English'}
+          </button>
+      </div>
+
       <div className="bg-white w-full max-w-md p-6 md:p-8 shadow-2xl border-t-4 border-accent rounded-sm">
         <div className="text-center mb-8">
           <div className="bg-slate-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
             <Package className="h-8 w-8 text-slate-900" />
           </div>
-          <h1 className="text-3xl font-heading font-bold text-slate-900">LOGILINK GLOBAL</h1>
-          <p className="text-slate-500 font-medium">Accès Opérateur & Administration</p>
+          <h1 className="text-3xl font-heading font-bold text-slate-900">{t('login_title')}</h1>
+          <p className="text-slate-500 font-medium">{t('login_subtitle')}</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-6">
           <div className="space-y-2">
             <label className="text-sm font-bold uppercase text-slate-500 flex items-center gap-2">
-              <User className="h-4 w-4" /> Identifiant
+              <User className="h-4 w-4" /> {t('login_id')}
             </label>
             <input 
               type="text" 
@@ -64,7 +75,7 @@ export default function Login() {
 
           <div className="space-y-2">
             <label className="text-sm font-bold uppercase text-slate-500 flex items-center gap-2">
-              <Lock className="h-4 w-4" /> Mot de passe
+              <Lock className="h-4 w-4" /> {t('login_pass')}
             </label>
             <input 
               type="password" 
@@ -81,13 +92,13 @@ export default function Login() {
             disabled={loading}
             className="w-full bg-accent text-white font-bold py-4 hover:bg-orange-700 transition-colors uppercase tracking-widest flex items-center justify-center gap-2 text-lg"
           >
-            {loading ? <Loader2 className="animate-spin" /> : 'Se Connecter'}
+            {loading ? <Loader2 className="animate-spin" /> : t('login_btn')}
           </button>
         </form>
         
         {/* Demo Hints */}
         <div className="mt-8 bg-blue-50 p-4 border border-blue-100 rounded text-sm text-blue-800">
-           <h3 className="font-bold flex items-center gap-2 mb-2"><Info className="h-4 w-4"/> Accès Démo :</h3>
+           <h3 className="font-bold flex items-center gap-2 mb-2"><Info className="h-4 w-4"/> {t('demo_access')}</h3>
            <ul className="space-y-1 list-disc list-inside">
              <li><b>Admin :</b> admin / admin123</li>
              <li><b>Opérateur :</b> operateur / op123</li>
@@ -95,7 +106,7 @@ export default function Login() {
         </div>
 
         <div className="mt-8 text-center text-xs text-slate-400">
-          <p>Support Technique: support@logilink.com</p>
+          <p>Support: support@logilink.com</p>
         </div>
       </div>
     </div>

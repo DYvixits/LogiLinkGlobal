@@ -15,10 +15,12 @@ import { Textarea } from "../components/ui/textarea";
 import { Checkbox } from "../components/ui/checkbox";
 import { Package, Truck, CheckCircle2, AlertCircle, MessageSquare, RefreshCw, FileDown, Receipt, User, LogOut, PlusCircle, Users, Shield, Menu } from 'lucide-react';
 import { toast } from 'sonner';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
 export default function Backoffice() {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [parcels, setParcels] = useState([]);
   const [users, setUsers] = useState([]);
@@ -208,15 +210,15 @@ export default function Backoffice() {
                      </div>
                      <div>
                         <h2 className="font-bold text-slate-900 truncate">{user.name}</h2>
-                        <Badge variant="outline" className="uppercase text-xs">{user.role === 'admin' ? 'Admin' : user.role === 'supervisor' ? 'Superv.' : 'Opérateur'}</Badge>
+                        <Badge variant="outline" className="uppercase text-xs">{user.role}</Badge>
                      </div>
                  </div>
                  <div className="flex gap-2 w-full md:w-auto">
                      <Button onClick={() => setNewParcelOpen(true)} className="flex-1 md:flex-none bg-accent hover:bg-orange-700 gap-2">
-                        <PlusCircle className="h-4 w-4" /> <span className="hidden sm:inline">Enregistrer</span> Colis
+                        <PlusCircle className="h-4 w-4" /> <span className="hidden sm:inline">{t('btn_new_parcel')}</span>
                      </Button>
                      <Button variant="ghost" onClick={handleLogout} className="flex-1 md:flex-none text-red-500 hover:text-red-700 hover:bg-red-50">
-                        <LogOut className="h-4 w-4 mr-2" /> <span className="hidden sm:inline">Déconnexion</span>
+                        <LogOut className="h-4 w-4 mr-2" /> <span className="hidden sm:inline">{t('btn_logout')}</span>
                      </Button>
                  </div>
              </div>
@@ -225,8 +227,8 @@ export default function Backoffice() {
         <div className="container py-6">
             <Tabs defaultValue="parcels" className="w-full">
                 <TabsList className="mb-6 w-full flex justify-start overflow-x-auto">
-                    <TabsTrigger value="parcels" className="flex-1 md:flex-none">Gestion des Colis</TabsTrigger>
-                    {user.role === 'admin' && <TabsTrigger value="users" className="flex-1 md:flex-none">Admin Utilisateurs</TabsTrigger>}
+                    <TabsTrigger value="parcels" className="flex-1 md:flex-none">{t('manage_parcels')}</TabsTrigger>
+                    {user.role === 'admin' && <TabsTrigger value="users" className="flex-1 md:flex-none">{t('admin_users')}</TabsTrigger>}
                 </TabsList>
 
                 <TabsContent value="parcels">
@@ -235,31 +237,31 @@ export default function Backoffice() {
                         <Card className="bg-slate-900 text-white border-none col-span-2 md:col-span-1">
                             <CardContent className="p-3 md:p-4 flex flex-col items-center justify-center text-center">
                                 <div className="text-2xl md:text-3xl font-bold">{stats.total || 0}</div>
-                                <div className="text-xs uppercase opacity-70">Total</div>
+                                <div className="text-xs uppercase opacity-70">{t('total_parcels')}</div>
                             </CardContent>
                         </Card>
                         <Card className="bg-white">
                             <CardContent className="p-3 md:p-4 flex flex-col items-center justify-center text-center">
                                 <div className="text-2xl md:text-3xl font-bold text-slate-600">{stats.registered || 0}</div>
-                                <div className="text-[10px] md:text-xs uppercase text-slate-500">Attente</div>
+                                <div className="text-[10px] md:text-xs uppercase text-slate-500">{t('waiting')}</div>
                             </CardContent>
                         </Card>
                         <Card className="bg-white">
                             <CardContent className="p-3 md:p-4 flex flex-col items-center justify-center text-center">
                                 <div className="text-2xl md:text-3xl font-bold text-orange-600">{stats.transit || 0}</div>
-                                <div className="text-[10px] md:text-xs uppercase text-slate-500">Transit</div>
+                                <div className="text-[10px] md:text-xs uppercase text-slate-500">{t('in_transit')}</div>
                             </CardContent>
                         </Card>
                         <Card className="bg-white">
                             <CardContent className="p-3 md:p-4 flex flex-col items-center justify-center text-center">
                                 <div className="text-2xl md:text-3xl font-bold text-green-600">{stats.arrived || 0}</div>
-                                <div className="text-[10px] md:text-xs uppercase text-slate-500">Arrivés</div>
+                                <div className="text-[10px] md:text-xs uppercase text-slate-500">{t('arrived')}</div>
                             </CardContent>
                         </Card>
                         <Card className="bg-red-50 border-red-100 col-span-2 md:col-span-1">
                             <CardContent className="p-3 md:p-4 flex flex-col items-center justify-center text-center">
                                 <div className="text-2xl md:text-3xl font-bold text-red-600">0</div>
-                                <div className="text-[10px] md:text-xs uppercase text-red-500">Retard</div>
+                                <div className="text-[10px] md:text-xs uppercase text-red-500">{t('delayed')}</div>
                             </CardContent>
                         </Card>
                     </div>
@@ -278,7 +280,7 @@ export default function Backoffice() {
                                             : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50"
                                         }`}
                                     >
-                                        {status === "ALL" ? "Tous" : status.replace(/_/g, " ")}
+                                        {status === "ALL" ? t('filter_all') : status.replace(/_/g, " ")}
                                     </button>
                                 ))}
                             </div>
@@ -286,7 +288,7 @@ export default function Backoffice() {
                             <div className="flex gap-2 w-full lg:w-auto">
                                 <div className="relative flex-1">
                                     <Input 
-                                        placeholder="Rechercher un colis..." 
+                                        placeholder={t('filter_search')}
                                         value={filterSearch}
                                         onChange={(e) => setFilterSearch(e.target.value)}
                                         className="w-full lg:w-[250px]"
@@ -301,13 +303,13 @@ export default function Backoffice() {
                         {/* Bulk Actions */}
                         {selectedParcels.length > 0 && (
                             <div className="bg-blue-50 p-3 border-b border-blue-100 flex flex-col sm:flex-row items-center justify-between gap-3 animate-in slide-in-from-top-2">
-                                <span className="text-sm font-bold text-blue-800">{selectedParcels.length} sélectionné(s)</span>
+                                <span className="text-sm font-bold text-blue-800">{selectedParcels.length} {t('bulk_selected')}</span>
                                 <div className="flex gap-2 w-full sm:w-auto">
                                      <Button size="sm" onClick={() => handleBulkStatus("IN_TRANSIT")} className="flex-1 bg-orange-600 hover:bg-orange-700">
-                                        <Truck className="h-3 w-3 mr-2" /> Expédier
+                                        <Truck className="h-3 w-3 mr-2" /> {t('bulk_ship')}
                                      </Button>
                                      <Button size="sm" onClick={() => handleBulkStatus("ARRIVED")} className="flex-1 bg-green-600 hover:bg-green-700">
-                                        <CheckCircle2 className="h-3 w-3 mr-2" /> Arrivé
+                                        <CheckCircle2 className="h-3 w-3 mr-2" /> {t('bulk_arrive')}
                                      </Button>
                                 </div>
                             </div>
@@ -325,10 +327,10 @@ export default function Backoffice() {
                                                 onChange={(e) => handleSelectAll(e.target.checked)}
                                             />
                                         </TableHead>
-                                        <TableHead>Numéro & Client</TableHead>
-                                        <TableHead className="hidden md:table-cell">Dates</TableHead>
-                                        <TableHead>État</TableHead>
-                                        <TableHead className="text-right">Actions</TableHead>
+                                        <TableHead>{t('col_number_client')}</TableHead>
+                                        <TableHead className="hidden md:table-cell">{t('col_dates')}</TableHead>
+                                        <TableHead>{t('col_status')}</TableHead>
+                                        <TableHead className="text-right">{t('col_actions')}</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -374,7 +376,7 @@ export default function Backoffice() {
                                                     disabled={p.status !== 'REGISTERED'}
                                                     className="h-8 text-xs"
                                                 >
-                                                    <Receipt className="h-3 w-3 sm:mr-1" /> <span className="hidden sm:inline">Réception</span>
+                                                    <Receipt className="h-3 w-3 sm:mr-1" /> <span className="hidden sm:inline">{t('btn_receipt')}</span>
                                                 </Button>
                                             </TableCell>
                                         </TableRow>
@@ -436,7 +438,7 @@ export default function Backoffice() {
         <Dialog open={newParcelOpen} onOpenChange={setNewParcelOpen}>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>Enregistrer un nouveau colis</DialogTitle>
+                    <DialogTitle>{t('modal_new_parcel')}</DialogTitle>
                     <DialogDescription>Saisie rapide pour l'opérateur.</DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
@@ -478,8 +480,8 @@ export default function Backoffice() {
                     </div>
                 </div>
                 <DialogFooter className="gap-2">
-                    <Button variant="outline" onClick={() => setNewParcelOpen(false)}>Annuler</Button>
-                    <Button onClick={handleCreateParcel} className="bg-slate-900">Enregistrer</Button>
+                    <Button variant="outline" onClick={() => setNewParcelOpen(false)}>{t('cancel')}</Button>
+                    <Button onClick={handleCreateParcel} className="bg-slate-900">{t('save')}</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
@@ -525,20 +527,20 @@ export default function Backoffice() {
         <Dialog open={receptionOpen} onOpenChange={setReceptionOpen}>
             <DialogContent className="max-w-md">
                 <DialogHeader>
-                    <DialogTitle>Réception Colis</DialogTitle>
+                    <DialogTitle>{t('modal_reception')}</DialogTitle>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                     <div className="grid grid-cols-4 items-center gap-4">
-                        <Label className="text-right font-bold">Poids (kg)</Label>
+                        <Label className="text-right font-bold">{t('weight')}</Label>
                         <Input type="number" step="0.1" value={receptionData.weight} onChange={(e) => setReceptionData({...receptionData, weight: e.target.value})} className="col-span-3 font-mono text-lg" />
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
-                        <Label className="text-right font-bold">Prix Final</Label>
+                        <Label className="text-right font-bold">{t('price')}</Label>
                         <Input type="number" value={receptionData.price} onChange={(e) => setReceptionData({...receptionData, price: e.target.value})} className="col-span-3 font-mono text-lg" />
                     </div>
                 </div>
                 <DialogFooter>
-                    <Button onClick={handleReceptionSubmit} className="w-full bg-blue-600 hover:bg-blue-700">Valider Réception</Button>
+                    <Button onClick={handleReceptionSubmit} className="w-full bg-blue-600 hover:bg-blue-700">{t('validate')}</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
