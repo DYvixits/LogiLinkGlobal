@@ -1,89 +1,226 @@
-from fastapi import FastAPI, APIRouter
-from dotenv import load_dotenv
-from starlette.middleware.cors import CORSMiddleware
+from fastapi import FastAPI, APIRouter, HTTPException, BackgroundTasks
+from fastapi.responses import StreamingResponse
+from fastapi.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
+from pydantic import BaseModel, Field
+from typing import List, Optional, Literal
+from datetime import datetime, timedelta
 import os
-import logging
-from pathlib import Path
-from pydantic import BaseModel, Field, ConfigDict
-from typing import List
-import uuid
-from datetime import datetime, timezone
+import random
+import string
+import io
+import qrcode
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import A4
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image as RLImage
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
+from dotenv import load_dotenv
 
+load_dotenv()
 
-ROOT_DIR = Path(__file__).parent
-load_dotenv(ROOT_DIR / '.env')
-
-# MongoDB connection
-mongo_url = os.environ['MONGO_URL']
+# MongoDB setup
+mongo_url = os.environ.get('MONGO_URL', 'mongodb://localhost:27017')
 client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ['DB_NAME']]
+db = client[os.environ.get('DB_NAME', 'logilink')]
+parcels_collection = db.parcels
 
-# Create the main app without a prefix
 app = FastAPI()
 
-# Create a router with the /api prefix
-api_router = APIRouter(prefix="/api")
-
-
-# Define Models
-class StatusCheck(BaseModel):
-    model_config = ConfigDict(extra="ignore")  # Ignore MongoDB's _id field
-    
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    client_name: str
-    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-
-class StatusCheckCreate(BaseModel):
-    client_name: str
-
-# Add your routes to the router instead of directly to app
-@api_router.get("/")
-async def root():
-    return {"message": "Hello World"}
-
-@api_router.post("/status", response_model=StatusCheck)
-async def create_status_check(input: StatusCheckCreate):
-    status_dict = input.model_dump()
-    status_obj = StatusCheck(**status_dict)
-    
-    # Convert to dict and serialize datetime to ISO string for MongoDB
-    doc = status_obj.model_dump()
-    doc['timestamp'] = doc['timestamp'].isoformat()
-    
-    _ = await db.status_checks.insert_one(doc)
-    return status_obj
-
-@api_router.get("/status", response_model=List[StatusCheck])
-async def get_status_checks():
-    # Exclude MongoDB's _id field from the query results
-    status_checks = await db.status_checks.find({}, {"_id": 0}).to_list(1000)
-    
-    # Convert ISO string timestamps back to datetime objects
-    for check in status_checks:
-        if isinstance(check['timestamp'], str):
-            check['timestamp'] = datetime.fromisoformat(check['timestamp'])
-    
-    return status_checks
-
-# Include the router in the main app
-app.include_router(api_router)
-
+# CORS
 app.add_middleware(
     CORSMiddleware,
+    allow_origins=["*"],
     allow_credentials=True,
-    allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
+api_router = APIRouter(prefix="/api")
 
-@app.on_event("shutdown")
-async def shutdown_db_client():
-    client.close()
+# --- Models ---
+
+class SenderReceiverInfo(BaseModel):
+    name: str
+    phone: str
+    city: str
+    address: Optional[str] = None
+
+class ParcelCreate(BaseModel):
+    direction: Literal["EU_TO_CM", "CM_TO_EU"]
+    sender: SenderReceiverInfo
+    receiver: SenderReceiverInfo
+    content_description: str
+    weight_kg: Optional[float] = None
+    departure_date: str # ISO Date YYYY-MM-DD
+
+class Parcel(BaseModel):
+    tracking_id: str
+    direction: str
+    sender: SenderReceiverInfo
+    receiver: SenderReceiverInfo
+    content_description: str
+    status: Literal["REGISTERED", "RECEIVED_AT_DEPOT", "IN_TRANSIT", "ARRIVED", "DELIVERED"] = "REGISTERED"
+    created_at: datetime
+    departure_date: str
+    estimated_arrival: str
+
+# --- Utils ---
+
+def generate_tracking_id():
+    # Format: LG-XXXXXX (LogiLink)
+    chars = string.ascii_uppercase + string.digits
+    suffix = ''.join(random.choice(chars) for _ in range(6))
+    return f"LOGI-{suffix}"
+
+def generate_pdf_ticket(parcel: dict):
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4)
+    styles = getSampleStyleSheet()
+    story = []
+
+    # Custom Styles
+    title_style = ParagraphStyle('Title', parent=styles['Heading1'], fontSize=24, alignment=1, spaceAfter=20)
+    normal_style = styles['Normal']
+    
+    # Header
+    story.append(Paragraph("TICKET D'ENVOI - LOGILINK GLOBAL", title_style))
+    story.append(Spacer(1, 0.5*inch))
+
+    # Tracking Number (BIG)
+    story.append(Paragraph(f"<b>N° SUIVI: {parcel['tracking_id']}</b>", ParagraphStyle('Tracking', parent=styles['Heading2'], fontSize=30, alignment=1, textColor=colors.navy)))
+    story.append(Spacer(1, 0.2*inch))
+    
+    # Status & Direction
+    dir_text = "EUROPE -> CAMEROUN" if parcel['direction'] == "EU_TO_CM" else "CAMEROUN -> EUROPE"
+    story.append(Paragraph(f"DIRECTION: {dir_text}", ParagraphStyle('Dir', parent=styles['Normal'], fontSize=14, alignment=1)))
+    story.append(Spacer(1, 0.5*inch))
+
+    # QR Code
+    qr = qrcode.QRCode(box_size=10, border=4)
+    qr.add_data(f"https://logilink.com/track/{parcel['tracking_id']}")
+    qr.make(fit=True)
+    img = qr.make_image(fill_color="black", back_color="white")
+    img_buffer = io.BytesIO()
+    img.save(img_buffer)
+    img_buffer.seek(0)
+    rl_img = RLImage(img_buffer, width=2*inch, height=2*inch)
+    story.append(rl_img)
+    story.append(Spacer(1, 0.5*inch))
+
+    # Details Table
+    data = [
+        ["EXPÉDITEUR", "DESTINATAIRE"],
+        [f"{parcel['sender']['name']}\n{parcel['sender']['phone']}\n{parcel['sender']['city']}",
+         f"{parcel['receiver']['name']}\n{parcel['receiver']['phone']}\n{parcel['receiver']['city']}"],
+        ["CONTENU", parcel['content_description']],
+        ["DATE DÉPART PRÉVUE", parcel['departure_date']]
+    ]
+    
+    t = Table(data, colWidths=[3*inch, 3*inch])
+    t.setStyle(TableStyle([
+        ('GRID', (0,0), (-1,-1), 1, colors.black),
+        ('BACKGROUND', (0,0), (1,0), colors.lightgrey),
+        ('TEXTCOLOR', (0,0), (-1,-1), colors.black),
+        ('ALIGN', (0,0), (-1,-1), 'LEFT'),
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+        ('PADDING', (0,0), (-1,-1), 12),
+        ('FONTSIZE', (0,0), (-1,-1), 12),
+        ('FONTNAME', (0,0), (1,0), 'Helvetica-Bold'),
+        ('SPAN', (0,2), (1,2)), # Merge content row
+        ('SPAN', (0,3), (1,3)), # Merge date row
+    ]))
+    story.append(t)
+    
+    story.append(Spacer(1, 1*inch))
+    story.append(Paragraph("Merci de coller ce ticket sur votre colis avant le dépôt.", normal_style))
+
+    doc.build(story)
+    buffer.seek(0)
+    return buffer
+
+# --- Routes ---
+
+@api_router.post("/parcels")
+async def create_parcel(parcel_in: ParcelCreate):
+    tracking_id = generate_tracking_id()
+    
+    # Calculate estimates (simple rule: 1 week later)
+    dep_date = datetime.strptime(parcel_in.departure_date, "%Y-%m-%d")
+    arrival_date = dep_date + timedelta(days=7) # Approx 1 week
+    
+    parcel_doc = parcel_in.dict()
+    parcel_doc.update({
+        "tracking_id": tracking_id,
+        "status": "REGISTERED",
+        "created_at": datetime.now(),
+        "estimated_arrival": arrival_date.strftime("%Y-%m-%d")
+    })
+    
+    await parcels_collection.insert_one(parcel_doc)
+    
+    # Clean for response
+    parcel_doc.pop("_id")
+    return parcel_doc
+
+@api_router.get("/parcels/{tracking_id}")
+async def get_parcel(tracking_id: str):
+    parcel = await parcels_collection.find_one({"tracking_id": tracking_id}, {"_id": 0})
+    if not parcel:
+        raise HTTPException(status_code=404, detail="Colis non trouvé")
+    return parcel
+
+@api_router.get("/parcels/{tracking_id}/pdf")
+async def get_parcel_pdf(tracking_id: str):
+    parcel = await parcels_collection.find_one({"tracking_id": tracking_id}, {"_id": 0})
+    if not parcel:
+        raise HTTPException(status_code=404, detail="Colis non trouvé")
+        
+    pdf_buffer = generate_pdf_ticket(parcel)
+    
+    return StreamingResponse(
+        pdf_buffer, 
+        media_type="application/pdf", 
+        headers={"Content-Disposition": f"attachment; filename=ticket-{tracking_id}.pdf"}
+    )
+
+@api_router.get("/parcels")
+async def list_parcels():
+    # Simple list for backoffice
+    parcels = await parcels_collection.find({}, {"_id": 0}).sort("created_at", -1).to_list(100)
+    return parcels
+
+@api_router.patch("/parcels/{tracking_id}/status")
+async def update_status(tracking_id: str, status: str):
+    result = await parcels_collection.update_one(
+        {"tracking_id": tracking_id},
+        {"$set": {"status": status}}
+    )
+    if result.modified_count == 0:
+         raise HTTPException(status_code=404, detail="Update failed")
+    return {"message": "Status updated"}
+
+# Schedule Endpoint (Mock logic for now, could be DB driven later)
+@api_router.get("/schedule")
+async def get_schedule():
+    # Generate next 4 weeks of schedule
+    today = datetime.now()
+    schedule = {
+        "eu_to_cm": [], # Fridays
+        "cm_to_eu": []  # Saturdays
+    }
+    
+    # Find next Friday
+    next_friday = today + timedelta((4 - today.weekday()) % 7)
+    # Find next Saturday
+    next_saturday = today + timedelta((5 - today.weekday()) % 7)
+    
+    for i in range(4):
+        f = next_friday + timedelta(weeks=i)
+        s = next_saturday + timedelta(weeks=i)
+        schedule["eu_to_cm"].append(f.strftime("%Y-%m-%d"))
+        schedule["cm_to_eu"].append(s.strftime("%Y-%m-%d"))
+        
+    return schedule
+
+app.include_router(api_router)
