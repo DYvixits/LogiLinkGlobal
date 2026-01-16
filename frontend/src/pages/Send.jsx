@@ -31,6 +31,55 @@ export default function Send() {
     }
   };
 
+  const FIXED_ITALY_ADDRESS = {
+    name: "Simo Patrice",
+    address_base: "Via Roma 35",
+    postal_code: "26866",
+    city: "Lodi",
+    country: "Italie",
+    full_address: "Via Roma 35, 26866 Lodi, Italie"
+  };
+
+  const isItalySide = (section) => {
+    if (direction === 'EU_TO_CM' && section === 'sender') return true;
+    if (direction === 'CM_TO_EU' && section === 'receiver') return true;
+    return false;
+  };
+
+  useEffect(() => {
+    // Pre-fill Italy side data
+    if (direction === 'EU_TO_CM') {
+        setFormData(prev => ({
+            ...prev,
+            sender: { 
+                ...prev.sender, 
+                name: FIXED_ITALY_ADDRESS.name,
+                city: `${FIXED_ITALY_ADDRESS.postal_code} ${FIXED_ITALY_ADDRESS.city}, ${FIXED_ITALY_ADDRESS.country}`,
+                address: FIXED_ITALY_ADDRESS.address_base
+            }
+        }));
+    } else {
+        setFormData(prev => ({
+            ...prev,
+            receiver: { 
+                ...prev.receiver, 
+                name: FIXED_ITALY_ADDRESS.name,
+                city: `${FIXED_ITALY_ADDRESS.postal_code} ${FIXED_ITALY_ADDRESS.city}, ${FIXED_ITALY_ADDRESS.country}`,
+                address: FIXED_ITALY_ADDRESS.address_base
+            }
+        }));
+    }
+  }, [direction]);
+
+  const [complement, setComplement] = useState("");
+
+  const handleComplementChange = (val) => {
+    setComplement(val);
+    const side = direction === 'EU_TO_CM' ? 'sender' : 'receiver';
+    const base = FIXED_ITALY_ADDRESS.address_base;
+    handleChange(side, 'address', val ? `${base}, ${val}` : base);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
