@@ -55,6 +55,12 @@ class ParcelCreate(BaseModel):
     weight_kg: Optional[float] = None
     departure_date: str # ISO Date YYYY-MM-DD
 
+class ParcelUpdate(BaseModel):
+    status: Optional[str] = None
+    weight_kg: Optional[float] = None
+    final_price: Optional[float] = None
+    note: Optional[str] = None
+
 class Parcel(BaseModel):
     tracking_id: str
     direction: str
@@ -65,6 +71,9 @@ class Parcel(BaseModel):
     created_at: datetime
     departure_date: str
     estimated_arrival: str
+    weight_kg: Optional[float] = None
+    final_price: Optional[float] = None
+    note: Optional[str] = None
 
 class NotificationRequest(BaseModel):
     tracking_id: str
@@ -160,7 +169,10 @@ async def create_parcel(parcel_in: ParcelCreate):
         "tracking_id": tracking_id,
         "status": "REGISTERED",
         "created_at": datetime.now(),
-        "estimated_arrival": arrival_date.strftime("%Y-%m-%d")
+        "estimated_arrival": arrival_date.strftime("%Y-%m-%d"),
+        "weight_kg": 0.0,
+        "final_price": 0.0,
+        "note": ""
     })
     
     await parcels_collection.insert_one(parcel_doc)
@@ -196,8 +208,28 @@ async def list_parcels():
     parcels = await parcels_collection.find({}, {"_id": 0}).sort("created_at", -1).to_list(100)
     return parcels
 
+@api_router.patch("/parcels/{tracking_id}")
+async def update_parcel(tracking_id: str, update: ParcelUpdate):
+    update_data = {k: v for k, v in update.dict().items() if v is not None}
+    
+    if not update_data:
+        return {"message": "No data to update"}
+
+    result = await parcels_collection.update_one(
+        {"tracking_id": tracking_id},
+        {"$set": update_data}
+    )
+    if result.modified_count == 0:
+         # It might be that data is same, check if doc exists
+         doc = await parcels_collection.find_one({"tracking_id": tracking_id})
+         if not doc:
+            raise HTTPException(status_code=404, detail="Parcel not found")
+            
+    return {"message": "Parcel updated", "updated_fields": update_data}
+
 @api_router.patch("/parcels/{tracking_id}/status")
 async def update_status(tracking_id: str, status: str):
+    # Backward compatibility wrapper
     result = await parcels_collection.update_one(
         {"tracking_id": tracking_id},
         {"$set": {"status": status}}

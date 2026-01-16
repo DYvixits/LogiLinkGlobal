@@ -8,11 +8,12 @@ import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "../components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../components/ui/dialog";
 import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
+import { Checkbox } from "../components/ui/checkbox";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { Package, Truck, CheckCircle2, AlertCircle, Calendar, MessageSquare, Mail, Phone, RefreshCw } from 'lucide-react';
+import { Package, Truck, CheckCircle2, AlertCircle, MessageSquare, Mail, Phone, RefreshCw, FileDown, Scale, Euro, Receipt } from 'lucide-react';
 import { toast } from 'sonner';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -27,12 +28,19 @@ export default function Backoffice() {
   const [filterStatus, setFilterStatus] = useState("ALL");
   const [filterSearch, setFilterSearch] = useState("");
 
+  // Bulk Actions
+  const [selectedParcels, setSelectedParcels] = useState([]);
+
   // Notification State
   const [notifyOpen, setNotifyOpen] = useState(false);
   const [selectedParcel, setSelectedParcel] = useState(null);
   const [notifyType, setNotifyType] = useState("sms");
   const [notifyMessage, setNotifyMessage] = useState("");
   const [sending, setSending] = useState(false);
+
+  // Reception State
+  const [receptionOpen, setReceptionOpen] = useState(false);
+  const [receptionData, setReceptionData] = useState({ weight: "", price: "", note: "" });
 
   const fetchData = async () => {
       setLoading(true);
@@ -57,7 +65,55 @@ export default function Backoffice() {
       fetchData();
   }, []);
 
+  const handleSelectAll = (checked) => {
+      if(checked) {
+          setSelectedParcels(filteredParcels.map(p => p.tracking_id));
+      } else {
+          setSelectedParcels([]);
+      }
+  }
+
+  const handleSelectOne = (id, checked) => {
+      if(checked) setSelectedParcels(prev => [...prev, id]);
+      else setSelectedParcels(prev => prev.filter(pid => pid !== id));
+  }
+
+  // --- ACTIONS ---
+
+  const openReceptionDialog = (parcel) => {
+      setSelectedParcel(parcel);
+      setReceptionData({ weight: parcel.weight_kg || "", price: parcel.final_price || "", note: parcel.note || "" });
+      setReceptionOpen(true);
+  }
+
+  const handleReceptionSubmit = async () => {
+      if (!receptionData.weight || !receptionData.price) {
+          toast.error("Poids et Prix sont obligatoires pour la réception.");
+          return;
+      }
+      try {
+          await axios.patch(`${BACKEND_URL}/api/parcels/${selectedParcel.tracking_id}`, {
+              status: "RECEIVED_AT_DEPOT",
+              weight_kg: parseFloat(receptionData.weight),
+              final_price: parseFloat(receptionData.price),
+              note: receptionData.note
+          });
+          toast.success("Colis REÇU et tarifé !");
+          setReceptionOpen(false);
+          fetchData();
+      } catch (e) {
+          toast.error("Erreur réception");
+      }
+  }
+
   const updateStatus = async (id, newStatus) => {
+      // If moving to RECEIVED manually without modal, warn user? No, enforce modal for logic.
+      if (newStatus === "RECEIVED_AT_DEPOT") {
+          const p = parcels.find(x => x.tracking_id === id);
+          openReceptionDialog(p);
+          return;
+      }
+
       try {
           await axios.patch(`${BACKEND_URL}/api/parcels/${id}/status?status=${newStatus}`);
           toast.success(`Statut mis à jour: ${newStatus}`);
@@ -67,14 +123,50 @@ export default function Backoffice() {
       }
   }
 
+  const handleBulkStatus = async (status) => {
+      if(!window.confirm(`Passer ${selectedParcels.length} colis en statut "${status}" ?`)) return;
+      
+      const promises = selectedParcels.map(id => axios.patch(`${BACKEND_URL}/api/parcels/${id}/status?status=${status}`));
+      try {
+          await Promise.all(promises);
+          toast.success("Mise à jour de masse effectuée !");
+          setSelectedParcels([]);
+          fetchData();
+      } catch(e) {
+          toast.error("Erreur partielle lors de la mise à jour de masse");
+      }
+  }
+
+  const exportCSV = () => {
+      const headers = ["Date", "ID", "Expediteur", "Destinataire", "Statut", "Poids (kg)", "Prix"];
+      const rows = filteredParcels.map(p => [
+          p.created_at, 
+          p.tracking_id, 
+          p.sender.name, 
+          p.receiver.name, 
+          p.status,
+          p.weight_kg || 0,
+          p.final_price || 0
+      ]);
+      
+      const csvContent = "data:text/csv;charset=utf-8," 
+          + headers.join(",") + "\n" 
+          + rows.map(e => e.join(",")).join("\n");
+          
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", "logilink_export.csv");
+      document.body.appendChild(link);
+      link.click();
+  }
+
   const handleNotifyOpen = (parcel) => {
       setSelectedParcel(parcel);
-      // Pre-fill message based on status
       let msg = `Bonjour ${parcel.receiver.name}, votre colis ${parcel.tracking_id} est `;
       if (parcel.status === 'ARRIVED') msg += "arrivé à destination et prêt à être retiré.";
       else if (parcel.status === 'IN_TRANSIT') msg += "actuellement en transit vers le Cameroun.";
       else msg += `maintenant au statut: ${parcel.status}.`;
-      
       setNotifyMessage(msg);
       setNotifyOpen(true);
   }
@@ -88,7 +180,7 @@ export default function Backoffice() {
               type: notifyType,
               message: notifyMessage
           });
-          toast.success(`Simulation: ${notifyType.toUpperCase()} envoyé avec succès !`);
+          toast.success(`Simulation: ${notifyType.toUpperCase()} envoyé !`);
           setNotifyOpen(false);
       } catch (e) {
           toast.error("Erreur lors de l'envoi");
@@ -106,12 +198,11 @@ export default function Backoffice() {
       return matchesStatus && matchesSearch;
   });
 
-  // Chart Data
   const chartData = [
       { name: 'Enregistré', count: stats.registered, color: '#94a3b8' },
-      { name: 'En Transit', count: stats.transit, color: '#f97316' }, // Orange
-      { name: 'Arrivé', count: stats.arrived, color: '#10b981' }, // Green
-      { name: 'Livré', count: stats.delivered, color: '#0f172a' }, // Dark
+      { name: 'En Transit', count: stats.transit, color: '#f97316' },
+      { name: 'Arrivé', count: stats.arrived, color: '#10b981' },
+      { name: 'Livré', count: stats.delivered, color: '#0f172a' },
   ];
 
   return (
@@ -120,7 +211,10 @@ export default function Backoffice() {
         
         <div className="container py-8">
             <div className="flex justify-between items-center mb-8">
-                 <h1 className="text-3xl font-heading font-bold text-slate-900">TABLEAU DE BORD OPÉRATEUR</h1>
+                 <div>
+                    <h1 className="text-3xl font-heading font-bold text-slate-900">POSTE DE CONTRÔLE</h1>
+                    <p className="text-slate-500 font-medium">Gestion opérationnelle terrain</p>
+                 </div>
                  <Button onClick={fetchData} variant="outline" size="sm" className="gap-2">
                     <RefreshCw className="h-4 w-4" /> Actualiser
                  </Button>
@@ -128,12 +222,12 @@ export default function Backoffice() {
 
             <Tabs defaultValue="dashboard" className="w-full">
                 <TabsList className="grid w-full md:w-[600px] grid-cols-3 mb-8">
-                    <TabsTrigger value="dashboard">Vue d'ensemble</TabsTrigger>
-                    <TabsTrigger value="parcels">Gestion des Colis</TabsTrigger>
-                    <TabsTrigger value="schedule">Calendrier</TabsTrigger>
+                    <TabsTrigger value="dashboard">Tableau de Bord</TabsTrigger>
+                    <TabsTrigger value="parcels">Gestion & Reception</TabsTrigger>
+                    <TabsTrigger value="schedule">Départs</TabsTrigger>
                 </TabsList>
 
-                {/* --- DASHBOARD TAB --- */}
+                {/* --- DASHBOARD --- */}
                 <TabsContent value="dashboard" className="space-y-6">
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                         <Card>
@@ -143,7 +237,6 @@ export default function Backoffice() {
                             </CardHeader>
                             <CardContent>
                                 <div className="text-2xl font-bold">{stats.total}</div>
-                                <p className="text-xs text-muted-foreground">Depuis le début</p>
                             </CardContent>
                         </Card>
                         <Card>
@@ -153,7 +246,6 @@ export default function Backoffice() {
                             </CardHeader>
                             <CardContent>
                                 <div className="text-2xl font-bold text-orange-600">{stats.transit}</div>
-                                <p className="text-xs text-muted-foreground">En cours d'acheminement</p>
                             </CardContent>
                         </Card>
                          <Card>
@@ -163,104 +255,121 @@ export default function Backoffice() {
                             </CardHeader>
                             <CardContent>
                                 <div className="text-2xl font-bold text-green-600">{stats.arrived}</div>
-                                <p className="text-xs text-muted-foreground">Arrivés au dépôt</p>
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Livrés</CardTitle>
-                                <CheckCircle2 className="h-4 w-4 text-slate-900" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold text-slate-900">{stats.delivered}</div>
-                                <p className="text-xs text-muted-foreground">Traitement terminé</p>
                             </CardContent>
                         </Card>
                     </div>
-
-                    <Card className="col-span-4">
-                        <CardHeader>
-                            <CardTitle>Répartition des Colis</CardTitle>
-                        </CardHeader>
-                        <CardContent className="pl-2">
-                            <div className="h-[300px] w-full">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart data={chartData}>
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                        <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                                        <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}`} />
-                                        <Tooltip />
-                                        <Bar dataKey="count" radius={[4, 4, 0, 0]}>
-                                            {chartData.map((entry, index) => (
-                                                <Cell key={`cell-${index}`} fill={entry.color} />
-                                            ))}
-                                        </Bar>
-                                    </BarChart>
-                                </ResponsiveContainer>
-                            </div>
-                        </CardContent>
-                    </Card>
                 </TabsContent>
 
-                {/* --- PARCELS TAB --- */}
+                {/* --- PARCELS MANAGEMENT --- */}
                 <TabsContent value="parcels">
                     <Card>
                         <CardHeader>
-                            <div className="flex items-center justify-between">
+                            <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
                                 <CardTitle>Liste des Colis</CardTitle>
-                                <div className="flex gap-2">
+                                <div className="flex flex-wrap gap-2 w-full md:w-auto">
                                     <Input 
-                                        placeholder="Rechercher (ID, Nom)..." 
+                                        placeholder="Recherche rapide..." 
                                         value={filterSearch}
                                         onChange={(e) => setFilterSearch(e.target.value)}
-                                        className="w-[200px]"
+                                        className="w-[150px] md:w-[200px]"
                                     />
                                     <Select value={filterStatus} onValueChange={setFilterStatus}>
-                                        <SelectTrigger className="w-[180px]">
+                                        <SelectTrigger className="w-[160px]">
                                             <SelectValue placeholder="Filtrer par statut" />
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="ALL">Tous les statuts</SelectItem>
-                                            <SelectItem value="REGISTERED">Enregistré</SelectItem>
-                                            <SelectItem value="RECEIVED_AT_DEPOT">Reçu au Dépôt</SelectItem>
-                                            <SelectItem value="IN_TRANSIT">En Transit</SelectItem>
-                                            <SelectItem value="ARRIVED">Arrivé</SelectItem>
-                                            <SelectItem value="DELIVERED">Livré</SelectItem>
+                                            <SelectItem value="REGISTERED">1. Enregistré</SelectItem>
+                                            <SelectItem value="RECEIVED_AT_DEPOT">2. Reçu (Pesé)</SelectItem>
+                                            <SelectItem value="IN_TRANSIT">3. En Transit</SelectItem>
+                                            <SelectItem value="ARRIVED">4. Arrivé</SelectItem>
+                                            <SelectItem value="DELIVERED">5. Livré</SelectItem>
                                         </SelectContent>
                                     </Select>
+                                    <Button variant="outline" onClick={exportCSV} title="Exporter CSV">
+                                        <FileDown className="h-4 w-4" />
+                                    </Button>
                                 </div>
                             </div>
+                            
+                            {/* Bulk Actions Bar */}
+                            {selectedParcels.length > 0 && (
+                                <div className="bg-slate-100 p-2 mt-4 flex items-center gap-4 rounded border border-slate-200 animate-in fade-in slide-in-from-top-2">
+                                    <span className="font-bold text-sm text-slate-700">{selectedParcels.length} sélectionné(s)</span>
+                                    <div className="h-4 w-px bg-slate-300" />
+                                    <Button size="sm" onClick={() => handleBulkStatus("IN_TRANSIT")} className="bg-orange-600 hover:bg-orange-700">
+                                        <Truck className="h-3 w-3 mr-2" /> Marquer "En Expédition"
+                                    </Button>
+                                    <Button size="sm" onClick={() => handleBulkStatus("ARRIVED")} className="bg-green-600 hover:bg-green-700">
+                                        <CheckCircle2 className="h-3 w-3 mr-2" /> Marquer "Arrivé"
+                                    </Button>
+                                </div>
+                            )}
                         </CardHeader>
                         <CardContent>
                             <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead>Date</TableHead>
-                                        <TableHead>ID Suivi</TableHead>
-                                        <TableHead>Client</TableHead>
+                                        <TableHead className="w-[40px]">
+                                            <Checkbox 
+                                                checked={selectedParcels.length === filteredParcels.length && filteredParcels.length > 0}
+                                                onCheckedChange={handleSelectAll}
+                                            />
+                                        </TableHead>
+                                        <TableHead>ID & Info</TableHead>
+                                        <TableHead>Expéditeur</TableHead>
+                                        <TableHead>Destinataire</TableHead>
+                                        <TableHead>Poids/Prix</TableHead>
                                         <TableHead>Statut</TableHead>
                                         <TableHead>Actions</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     {filteredParcels.map((p) => (
-                                        <TableRow key={p.tracking_id}>
-                                            <TableCell>{new Date(p.created_at).toLocaleDateString()}</TableCell>
-                                            <TableCell className="font-mono font-bold">{p.tracking_id}</TableCell>
+                                        <TableRow key={p.tracking_id} className={selectedParcels.includes(p.tracking_id) ? "bg-slate-50" : ""}>
                                             <TableCell>
-                                                <div className="text-sm font-medium">{p.sender.name}</div>
-                                                <div className="text-xs text-muted-foreground">&rarr; {p.receiver.name}</div>
+                                                <Checkbox 
+                                                    checked={selectedParcels.includes(p.tracking_id)}
+                                                    onCheckedChange={(c) => handleSelectOne(p.tracking_id, c)}
+                                                />
                                             </TableCell>
                                             <TableCell>
-                                                <Badge variant={
-                                                    p.status === 'DELIVERED' ? 'default' : 
-                                                    p.status === 'IN_TRANSIT' ? 'destructive' : // Orange really
-                                                    'secondary'
-                                                } className={
-                                                    p.status === 'IN_TRANSIT' ? 'bg-orange-500 hover:bg-orange-600' : 
-                                                    p.status === 'ARRIVED' ? 'bg-green-500 hover:bg-green-600 text-white' : ''
+                                                <div className="font-mono font-bold text-accent">{p.tracking_id}</div>
+                                                <div className="text-xs text-slate-500">{new Date(p.created_at).toLocaleDateString()}</div>
+                                            </TableCell>
+                                            <TableCell className="text-sm">
+                                                {p.sender.name}
+                                                <div className="flex items-center gap-1 mt-1">
+                                                     <a href={`https://wa.me/${p.sender.phone.replace(/[^0-9]/g, '')}`} target="_blank" rel="noreferrer" className="text-green-600 hover:bg-green-100 p-1 rounded">
+                                                        <Phone className="h-3 w-3" />
+                                                     </a>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="text-sm">
+                                                {p.receiver.name}
+                                                <div className="flex items-center gap-1 mt-1">
+                                                     <a href={`https://wa.me/${p.receiver.phone.replace(/[^0-9]/g, '')}`} target="_blank" rel="noreferrer" className="text-green-600 hover:bg-green-100 p-1 rounded">
+                                                        <Phone className="h-3 w-3" />
+                                                     </a>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                {p.weight_kg ? (
+                                                    <div className="text-xs font-mono">
+                                                        <div>{p.weight_kg} kg</div>
+                                                        <div className="font-bold">{p.final_price} €</div>
+                                                    </div>
+                                                ) : <span className="text-xs text-slate-400">-</span>}
+                                            </TableCell>
+                                            <TableCell>
+                                                <Badge className={
+                                                    p.status === 'DELIVERED' ? 'bg-slate-800' : 
+                                                    p.status === 'IN_TRANSIT' ? 'bg-orange-600' : 
+                                                    p.status === 'ARRIVED' ? 'bg-green-600' : 
+                                                    p.status === 'RECEIVED_AT_DEPOT' ? 'bg-blue-600' : 
+                                                    'bg-slate-200 text-slate-700 hover:bg-slate-300'
                                                 }>
-                                                    {p.status}
+                                                    {p.status === 'RECEIVED_AT_DEPOT' ? 'REÇU DÉPÔT' : p.status}
                                                 </Badge>
                                             </TableCell>
                                             <TableCell className="flex gap-2">
@@ -273,107 +382,83 @@ export default function Backoffice() {
                                                     </SelectTrigger>
                                                     <SelectContent>
                                                         <SelectItem value="REGISTERED">ENREGISTRÉ</SelectItem>
-                                                        <SelectItem value="RECEIVED_AT_DEPOT">AU DÉPÔT</SelectItem>
+                                                        <SelectItem value="RECEIVED_AT_DEPOT" className="font-bold text-blue-600">REÇU (PESER)</SelectItem>
                                                         <SelectItem value="IN_TRANSIT">EN TRANSIT</SelectItem>
                                                         <SelectItem value="ARRIVED">ARRIVÉ</SelectItem>
                                                         <SelectItem value="DELIVERED">LIVRÉ</SelectItem>
                                                     </SelectContent>
                                                 </Select>
-                                                <Button size="sm" variant="outline" className="h-8 w-8 p-0" onClick={() => handleNotifyOpen(p)}>
-                                                    <MessageSquare className="h-4 w-4" />
+                                                <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => handleNotifyOpen(p)}>
+                                                    <MessageSquare className="h-4 w-4 text-slate-500" />
                                                 </Button>
                                             </TableCell>
                                         </TableRow>
                                     ))}
-                                    {filteredParcels.length === 0 && (
-                                        <TableRow>
-                                            <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                                                Aucun colis trouvé.
-                                            </TableCell>
-                                        </TableRow>
-                                    )}
                                 </TableBody>
                             </Table>
                         </CardContent>
                     </Card>
                 </TabsContent>
-
-                {/* --- CALENDAR TAB --- */}
-                <TabsContent value="schedule">
+                
+                 {/* --- SCHEDULE TAB (Placeholder for now) --- */}
+                 <TabsContent value="schedule">
                     <Card>
-                        <CardHeader className="flex flex-row items-center justify-between">
-                            <CardTitle>Gestion des Départs</CardTitle>
-                            <Button variant="secondary" onClick={() => toast.info("Fonctionnalité simulée: Ajout activé")}>
-                                + Ajouter un départ
-                            </Button>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="grid md:grid-cols-2 gap-8">
-                                <div className="space-y-4">
-                                    <h3 className="font-bold flex items-center gap-2 border-b pb-2">
-                                        <Truck className="h-4 w-4" /> EUROPE &rarr; CAMEROUN
-                                    </h3>
-                                    {schedule.eu_to_cm.map((date, i) => (
-                                        <div key={i} className="flex items-center justify-between p-3 bg-slate-100 rounded-sm border border-slate-200">
-                                            <div className="font-mono">{new Date(date).toLocaleDateString('fr-FR', {weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'})}</div>
-                                            <Button size="sm" variant="ghost" className="text-red-500 hover:text-red-700 h-6" onClick={() => toast.info("Simulation: Départ annulé")}>
-                                                Annuler
-                                            </Button>
-                                        </div>
-                                    ))}
-                                </div>
-                                <div className="space-y-4">
-                                    <h3 className="font-bold flex items-center gap-2 border-b pb-2">
-                                        <Truck className="h-4 w-4" /> CAMEROUN &rarr; EUROPE
-                                    </h3>
-                                    {schedule.cm_to_eu.map((date, i) => (
-                                        <div key={i} className="flex items-center justify-between p-3 bg-slate-100 rounded-sm border border-slate-200">
-                                            <div className="font-mono">{new Date(date).toLocaleDateString('fr-FR', {weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'})}</div>
-                                            <Button size="sm" variant="ghost" className="text-red-500 hover:text-red-700 h-6" onClick={() => toast.info("Simulation: Départ annulé")}>
-                                                Annuler
-                                            </Button>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </CardContent>
+                        <CardHeader><CardTitle>Prochains Départs</CardTitle></CardHeader>
+                        <CardContent><p className="text-slate-500">Voir section Accueil pour l'instant.</p></CardContent>
                     </Card>
-                </TabsContent>
+                 </TabsContent>
             </Tabs>
         </div>
+
+        {/* RECEPTION DIALOG */}
+        <Dialog open={receptionOpen} onOpenChange={setReceptionOpen}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2"><Receipt className="h-5 w-5"/> Réception Colis: {selectedParcel?.tracking_id}</DialogTitle>
+                    <DialogDescription>
+                        Étape obligatoire : Saisir le poids et le prix final pour valider la réception.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label className="text-right font-bold">Poids (kg)</Label>
+                        <Input 
+                            className="col-span-3" type="number" step="0.1" 
+                            value={receptionData.weight}
+                            onChange={(e) => setReceptionData({...receptionData, weight: e.target.value})}
+                        />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label className="text-right font-bold">Prix Final</Label>
+                        <Input 
+                            className="col-span-3" type="number" 
+                            value={receptionData.price}
+                            onChange={(e) => setReceptionData({...receptionData, price: e.target.value})}
+                        />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label className="text-right">Note</Label>
+                        <Textarea 
+                            className="col-span-3" placeholder="Ex: Fragile, Emballage renforcé..."
+                            value={receptionData.note}
+                            onChange={(e) => setReceptionData({...receptionData, note: e.target.value})}
+                        />
+                    </div>
+                </div>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => setReceptionOpen(false)}>Annuler</Button>
+                    <Button onClick={handleReceptionSubmit} className="bg-blue-600 hover:bg-blue-700">Valider Réception</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
 
         {/* NOTIFICATION DIALOG */}
         <Dialog open={notifyOpen} onOpenChange={setNotifyOpen}>
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>Notifier le Client</DialogTitle>
-                    <DialogDescription>
-                        Envoyer un message au destinataire ({selectedParcel?.receiver.name}) concernant le colis {selectedParcel?.tracking_id}.
-                    </DialogDescription>
                 </DialogHeader>
-                
                 <div className="grid gap-4 py-4">
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label className="text-right">Canal</Label>
-                        <div className="col-span-3 flex gap-4">
-                            <Button 
-                                type="button" 
-                                variant={notifyType === 'sms' ? 'default' : 'outline'} 
-                                onClick={() => setNotifyType('sms')}
-                                className="flex-1"
-                            >
-                                <Phone className="h-4 w-4 mr-2" /> SMS
-                            </Button>
-                            <Button 
-                                type="button" 
-                                variant={notifyType === 'email' ? 'default' : 'outline'} 
-                                onClick={() => setNotifyType('email')}
-                                className="flex-1"
-                            >
-                                <Mail className="h-4 w-4 mr-2" /> Email
-                            </Button>
-                        </div>
-                    </div>
                     <div className="grid grid-cols-4 items-center gap-4">
                         <Label className="text-right">Message</Label>
                         <Textarea 
@@ -383,11 +468,9 @@ export default function Backoffice() {
                         />
                     </div>
                 </div>
-
                 <DialogFooter>
-                    <Button variant="outline" onClick={() => setNotifyOpen(false)}>Annuler</Button>
                     <Button onClick={handleSendNotification} disabled={sending}>
-                        {sending ? "Envoi..." : "Envoyer le message"}
+                        {sending ? "Envoi..." : "Envoyer"}
                     </Button>
                 </DialogFooter>
             </DialogContent>
