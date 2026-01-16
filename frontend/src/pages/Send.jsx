@@ -143,23 +143,38 @@ export default function Send() {
            {/* Section Expéditeur */}
            <div className="mb-8">
               <h3 className="font-heading text-xl font-bold bg-slate-100 p-2 border-l-4 border-slate-900 mb-4">1. EXPÉDITEUR</h3>
-              <div className="grid md:grid-cols-2 gap-4">
-                 <div className="space-y-1">
-                    <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Nom Complet</label>
-                    <input required type="text" className="w-full border-2 border-slate-200 p-3 focus:border-slate-900 outline-none font-medium" 
-                       value={formData.sender.name} onChange={e => handleChange('sender', 'name', e.target.value)} />
-                 </div>
-                 <div className="space-y-1">
-                    <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Téléphone</label>
-                    <input required type="tel" className="w-full border-2 border-slate-200 p-3 focus:border-slate-900 outline-none font-medium" 
-                       value={formData.sender.phone} onChange={e => handleChange('sender', 'phone', e.target.value)} />
-                 </div>
-                 <div className="space-y-1 md:col-span-2">
-                    <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Ville & Adresse</label>
-                    <input required type="text" className="w-full border-2 border-slate-200 p-3 focus:border-slate-900 outline-none font-medium" 
-                       value={formData.sender.city} onChange={e => handleChange('sender', 'city', e.target.value)} />
-                 </div>
-              </div>
+              {isItalySide('sender') ? (
+                  <div className="bg-slate-50 p-6 border-2 border-slate-200 border-dashed">
+                      <div className="mb-4">
+                          <p className="text-sm font-bold text-slate-500 uppercase">Adresse de dépôt (Fixe)</p>
+                          <p className="font-heading text-2xl font-bold text-slate-900">{FIXED_ITALY_ADDRESS.name}</p>
+                          <p className="font-mono text-slate-700">{FIXED_ITALY_ADDRESS.full_address}</p>
+                      </div>
+                      <div className="space-y-1">
+                          <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Complément d'adresse (Optionnel)</label>
+                          <input type="text" placeholder="Ex: Batiment B, Etage 2..." className="w-full border-2 border-slate-200 p-3 focus:border-slate-900 outline-none font-medium"
+                             value={complement} onChange={e => handleComplementChange(e.target.value)} />
+                      </div>
+                  </div>
+              ) : (
+                  <div className="grid md:grid-cols-2 gap-4">
+                     <div className="space-y-1">
+                        <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Nom Complet</label>
+                        <input required type="text" className="w-full border-2 border-slate-200 p-3 focus:border-slate-900 outline-none font-medium" 
+                           value={formData.sender.name} onChange={e => handleChange('sender', 'name', e.target.value)} />
+                     </div>
+                     <div className="space-y-1">
+                        <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Téléphone</label>
+                        <input required type="tel" className="w-full border-2 border-slate-200 p-3 focus:border-slate-900 outline-none font-medium" 
+                           value={formData.sender.phone} onChange={e => handleChange('sender', 'phone', e.target.value)} />
+                     </div>
+                     <div className="space-y-1 md:col-span-2">
+                        <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Ville & Adresse</label>
+                        <input required type="text" className="w-full border-2 border-slate-200 p-3 focus:border-slate-900 outline-none font-medium" 
+                           value={formData.sender.city} onChange={e => handleChange('sender', 'city', e.target.value)} />
+                     </div>
+                  </div>
+              )}
            </div>
 
            {/* Section Destinataire */}
