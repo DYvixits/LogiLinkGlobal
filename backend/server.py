@@ -9,6 +9,7 @@ import os
 import random
 import string
 import io
+import asyncio
 import qrcode
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
@@ -64,6 +65,11 @@ class Parcel(BaseModel):
     created_at: datetime
     departure_date: str
     estimated_arrival: str
+
+class NotificationRequest(BaseModel):
+    tracking_id: str
+    type: Literal["sms", "email"]
+    message: str
 
 # --- Utils ---
 
@@ -222,5 +228,35 @@ async def get_schedule():
         schedule["cm_to_eu"].append(s.strftime("%Y-%m-%d"))
         
     return schedule
+
+# --- NEW: Dashboard Stats ---
+@api_router.get("/stats")
+async def get_stats():
+    total = await parcels_collection.count_documents({})
+    registered = await parcels_collection.count_documents({"status": "REGISTERED"})
+    transit = await parcels_collection.count_documents({"status": "IN_TRANSIT"})
+    arrived = await parcels_collection.count_documents({"status": "ARRIVED"})
+    delivered = await parcels_collection.count_documents({"status": "DELIVERED"})
+    
+    # Simple stats return
+    return {
+        "total": total,
+        "registered": registered,
+        "transit": transit,
+        "arrived": arrived,
+        "delivered": delivered
+    }
+
+# --- NEW: Notification Simulation ---
+@api_router.post("/notify/simulate")
+async def simulate_notification(req: NotificationRequest):
+    # Simulate network delay
+    await asyncio.sleep(1)
+    # In a real app, we would call Twilio or SendGrid here
+    return {
+        "success": True, 
+        "message": f"SIMULATION: {req.type.upper()} envoyé à {req.tracking_id}",
+        "details": req.message
+    }
 
 app.include_router(api_router)
