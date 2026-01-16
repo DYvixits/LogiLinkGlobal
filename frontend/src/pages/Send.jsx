@@ -37,6 +37,7 @@ export default function Send() {
     postal_code: "26866",
     city: "Lodi",
     country: "Italie",
+    phone: "+39 3287091255",
     full_address: "Via Roma 35, 26866 Lodi, Italie"
   };
 
@@ -54,6 +55,7 @@ export default function Send() {
             sender: { 
                 ...prev.sender, 
                 name: FIXED_ITALY_ADDRESS.name,
+                phone: FIXED_ITALY_ADDRESS.phone,
                 city: `${FIXED_ITALY_ADDRESS.postal_code} ${FIXED_ITALY_ADDRESS.city}, ${FIXED_ITALY_ADDRESS.country}`,
                 address: FIXED_ITALY_ADDRESS.address_base
             }
@@ -64,6 +66,7 @@ export default function Send() {
             receiver: { 
                 ...prev.receiver, 
                 name: FIXED_ITALY_ADDRESS.name,
+                phone: FIXED_ITALY_ADDRESS.phone,
                 city: `${FIXED_ITALY_ADDRESS.postal_code} ${FIXED_ITALY_ADDRESS.city}, ${FIXED_ITALY_ADDRESS.country}`,
                 address: FIXED_ITALY_ADDRESS.address_base
             }
