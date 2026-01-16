@@ -7,6 +7,7 @@ import Home from './pages/Home';
 import Send from './pages/Send';
 import Tracking from './pages/Tracking';
 import Backoffice from './pages/Backoffice';
+import Login from './pages/Login';
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
           <Route path="/send" element={<Send />} />
           <Route path="/track" element={<Tracking />} />
           <Route path="/backoffice" element={<Backoffice />} />
+          <Route path="/login" element={<Login />} />
         </Routes>
       </BrowserRouter>
       <Toaster position="top-right" />
