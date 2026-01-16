@@ -59,6 +59,9 @@ class User(BaseModel):
     role: Literal["admin", "supervisor", "operator"]
     disabled: Optional[bool] = False
 
+class UserCreate(User):
+    password: str
+
 class UserInDB(User):
     hashed_password: str
 
@@ -126,9 +129,15 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
         raise credentials_exception
     return user
 
-# Seeding Default Users
+def generate_tracking_id():
+    chars = string.ascii_uppercase + string.digits
+    suffix = ''.join(random.choice(chars) for _ in range(6))
+    return f"LOGI-{suffix}"
+
+# Seeding
 @app.on_event("startup")
-async def seed_users():
+async def seed_data():
+    # Users
     if await users_collection.count_documents({}) == 0:
         users = [
             {"username": "admin", "full_name": "Administrateur", "role": "admin", "hashed_password": get_password_hash("admin123")},
@@ -136,11 +145,39 @@ async def seed_users():
             {"username": "superviseur", "full_name": "Superviseur Chef", "role": "supervisor", "hashed_password": get_password_hash("super123")},
         ]
         await users_collection.insert_many(users)
+        print("Users seeded")
 
-def generate_tracking_id():
-    chars = string.ascii_uppercase + string.digits
-    suffix = ''.join(random.choice(chars) for _ in range(6))
-    return f"LOGI-{suffix}"
+    # Parcels (Fake data for demo)
+    if await parcels_collection.count_documents({}) < 5:
+        dummy_parcels = []
+        statuses = ["REGISTERED", "RECEIVED_AT_DEPOT", "IN_TRANSIT", "ARRIVED", "DELIVERED"]
+        directions = ["EU_TO_CM", "CM_TO_EU"]
+        
+        for i in range(10):
+            status = random.choice(statuses)
+            direction = random.choice(directions)
+            days_ago = random.randint(0, 30)
+            created_at = datetime.now() - timedelta(days=days_ago)
+            dep_date = created_at + timedelta(days=2)
+            arr_date = dep_date + timedelta(days=7)
+            
+            p = {
+                "tracking_id": generate_tracking_id(),
+                "direction": direction,
+                "sender": {"name": f"Sender {i}", "phone": "+3300000000", "city": "Paris" if direction == "EU_TO_CM" else "Douala"},
+                "receiver": {"name": f"Receiver {i}", "phone": "+2370000000", "city": "Yaoundé" if direction == "EU_TO_CM" else "Rome"},
+                "content_description": f"Test Content {i}",
+                "status": status,
+                "created_at": created_at,
+                "departure_date": dep_date.strftime("%Y-%m-%d"),
+                "estimated_arrival": arr_date.strftime("%Y-%m-%d"),
+                "weight_kg": random.uniform(1.0, 20.0) if status != "REGISTERED" else 0.0,
+                "final_price": random.uniform(10.0, 150.0) if status != "REGISTERED" else 0.0,
+                "note": "Donnée exemple"
+            }
+            dummy_parcels.append(p)
+        await parcels_collection.insert_many(dummy_parcels)
+        print("Parcels seeded")
 
 def generate_pdf_ticket(parcel: dict):
     buffer = io.BytesIO()
@@ -208,6 +245,30 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     
     access_token = create_access_token(data={"sub": user["username"], "role": user["role"]})
     return {"access_token": access_token, "token_type": "bearer", "role": user["role"], "full_name": user["full_name"]}
+
+@api_router.get("/users", response_model=List[User])
+async def list_users(current_user: dict = Depends(get_current_user)):
+    # Simple role check
+    if current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin only")
+    users = await users_collection.find({}, {"_id": 0, "hashed_password": 0}).to_list(100)
+    return users
+
+@api_router.post("/users", response_model=User)
+async def create_user(user_in: UserCreate, current_user: dict = Depends(get_current_user)):
+    if current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin only")
+    
+    existing = await users_collection.find_one({"username": user_in.username})
+    if existing:
+        raise HTTPException(status_code=400, detail="Username already registered")
+    
+    user_doc = user_in.dict()
+    user_doc["hashed_password"] = get_password_hash(user_in.password)
+    del user_doc["password"]
+    
+    await users_collection.insert_one(user_doc)
+    return user_in
 
 @api_router.post("/parcels")
 async def create_parcel(parcel_in: ParcelCreate):
