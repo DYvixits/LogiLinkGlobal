@@ -1,0 +1,161 @@
+{
+  "design_system": {
+    "identity": {
+      "name": "LogiLink Global",
+      "archetype": "The Performance Pro (Maritime Edition)",
+      "vibe": "Precision, Global Connection, Industrial Strength",
+      "principles": [
+        "Fusion over Imitation: Mix Swiss precision with Industrial rawness.",
+        "Emotion First: Trust and Speed.",
+        "Content is King: Data is the hero (Tracking numbers, ETAs).",
+        "Zoom In: Focus on the package journey.",
+        "Negative Space: Breathing room for complex data."
+      ]
+    },
+    "typography": {
+      "strategy": "The Swiss Brutalist",
+      "headings": {
+        "family": "Barlow Condensed, sans-serif",
+        "weights": ["700", "800"],
+        "usage": "Use for all major section headers and hero text. Tight tracking (-0.02em).",
+        "fallback": "Oswald, sans-serif"
+      },
+      "body": {
+        "family": "Inter, sans-serif",
+        "weights": ["400", "500"],
+        "usage": "Standard text, UI elements, data tables.",
+        "fallback": "system-ui, sans-serif"
+      },
+      "mono": {
+        "family": "JetBrains Mono, monospace",
+        "usage": "Tracking numbers, coordinates, timestamps."
+      }
+    },
+    "colors": {
+      "palette": {
+        "primary": {
+          "name": "Deep Ocean",
+          "hex": "#0F172A",
+          "tailwind": "slate-900",
+          "usage": "Primary buttons, text, strong borders."
+        },
+        "secondary": {
+          "name": "Concrete",
+          "hex": "#F1F5F9",
+          "tailwind": "slate-100",
+          "usage": "Backgrounds, secondary buttons."
+        },
+        "accent": {
+          "name": "International Orange",
+          "hex": "#EA580C",
+          "tailwind": "orange-600",
+          "usage": "CTAs, active states, critical alerts. The 'Signal' color."
+        },
+        "success": {
+          "name": "Signal Green",
+          "hex": "#10B981",
+          "tailwind": "emerald-500",
+          "usage": "Status: Delivered, On Time."
+        },
+        "surface": {
+          "light": "#FFFFFF",
+          "dark": "#020617"
+        }
+      },
+      "gradients": {
+        "hero_overlay": "linear-gradient(180deg, rgba(15, 23, 42, 0) 0%, rgba(15, 23, 42, 0.8) 100%)",
+        "active_border": "linear-gradient(90deg, #EA580C 0%, #F97316 50%, #EA580C 100%)"
+      }
+    },
+    "layout": {
+      "spacing_scale": "Generous (2x standard)",
+      "container_padding": "p-6 md:p-12 lg:p-24",
+      "grid_system": {
+        "marketing": "Mode A: The Tetris Grid (Asymmetrical, 12-col)",
+        "dashboard": "Mode B: High Density Grid (4-col, tight gaps)"
+      },
+      "rules": [
+        "Mobile-First: Start with grid-cols-1.",
+        "No Center-Everything: Use asymmetry for tension.",
+        "Breathing Room: Use negative space to highlight data."
+      ]
+    },
+    "components": {
+      "buttons": {
+        "primary": "bg-slate-900 text-white hover:bg-slate-800 rounded-none uppercase tracking-widest font-bold px-8 py-4 transition-all hover:translate-x-1",
+        "secondary": "border-2 border-slate-200 text-slate-900 hover:border-slate-900 rounded-none uppercase tracking-widest font-bold px-8 py-4",
+        "accent": "bg-orange-600 text-white hover:bg-orange-700 rounded-none uppercase tracking-widest font-bold px-8 py-4 shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px]"
+      },
+      "cards": {
+        "style": "The 'Technical' Look",
+        "border": "1px solid rgba(15, 23, 42, 0.1)",
+        "shadow": "none",
+        "hover": "border-orange-600/50 shadow-lg transition-all duration-300"
+      },
+      "inputs": {
+        "style": "Sharp edges, heavy borders.",
+        "classes": "rounded-none border-2 border-slate-200 focus:border-slate-900 focus:ring-0 bg-transparent p-4"
+      }
+    },
+    "visual_enhancers": {
+      "textures": "Subtle noise overlay on solid backgrounds to reduce digital flatness.",
+      "borders": "Grid Borders: Expose the skeleton. Use border-r and border-b on grid items.",
+      "shadows": "Hard shadows for buttons (Neo-Brutalist touch), soft ambient shadows for floating elements."
+    },
+    "motion": {
+      "transitions": "transition-all duration-300 ease-out",
+      "micro_interactions": "Hover: slight lift (-2px) + border color change.",
+      "scroll": "Use Lenis for smooth scrolling momentum.",
+      "loading": "Industrial progress bars (striped, animated)."
+    },
+    "media": {
+      "image_style": "High contrast, desaturated with preserved accent colors (Orange/Red).",
+      "image_urls": {
+        "hero": {
+          "url": "https://images.unsplash.com/photo-1738194942064-826a6219e5cb",
+          "alt": "Container ship at sunset near Italy",
+          "usage": "Main landing page hero background."
+        },
+        "operations": {
+          "url": "https://images.pexels.com/photos/4484078/pexels-photo-4484078.jpeg",
+          "alt": "Logistics worker with tablet",
+          "usage": "Features section, 'How it works'."
+        },
+        "global_network": {
+          "url": "https://images.unsplash.com/photo-1761926002909-781a45b71030",
+          "alt": "Aerial view of busy port",
+          "usage": "Global network/Stats section."
+        }
+      }
+    },
+    "accessibility": {
+      "contrast": "Ensure 4.5:1 ratio for text. Use APCA for critical data.",
+      "focus_states": "Visible thick outline (2px solid orange) on focus.",
+      "reduced_motion": "Respect user preferences."
+    },
+    "tech_stack": {
+      "framework": "React",
+      "styling": "Tailwind CSS",
+      "components": "Shadcn UI (Customized)",
+      "icons": "Lucide React",
+      "charts": "Recharts / Shadcn Charts"
+    },
+    "instructions_to_main_agent": [
+      "Implement the 'Barlow Condensed' font for all headings.",
+      "Use the 'International Orange' (#EA580C) sparingly but boldly for CTAs.",
+      "Do not use rounded corners > 4px. Keep it sharp and industrial.",
+      "Use the provided image URLs for the respective sections.",
+      "Ensure the 'Tracking' input is the most prominent element on the page.",
+      "For the dashboard, use the 'High Density Grid' layout.",
+      "Apply a subtle noise texture to the background if possible.",
+      "Use 'sonner' for all toast notifications."
+    ],
+    "universal_guidelines": [
+      "Avoid generic 'AI slop' designs. Be bold.",
+      "No gradients on dark colors.",
+      "No 'Inter' for headings.",
+      "Use 'data-testid' on all interactive elements.",
+      "Mobile-first responsive design is mandatory."
+    ]
+  }
+}
