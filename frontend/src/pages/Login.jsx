@@ -28,10 +28,10 @@ export default function Login() {
       localStorage.setItem('role', res.data.role);
       localStorage.setItem('user_name', res.data.full_name);
       
-      toast.success(`Bienvenue ${res.data.full_name}`);
+      toast.success(`${t('welcome')} ${res.data.full_name}`);
       navigate('/backoffice');
     } catch (err) {
-      toast.error('Identifiants incorrects');
+      toast.error(t('login_error'));
       console.error(err);
     } finally {
       setLoading(false);

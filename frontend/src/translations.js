@@ -93,7 +93,11 @@ export const translations = {
     price: "Prix Final",
     validate: "Valider",
     cancel: "Annuler",
-    save: "Enregistrer"
+    save: "Enregistrer",
+    label_depot: "Dépôt",
+    label_arrival: "Arrivée",
+    welcome: "Bienvenue",
+    login_error: "Identifiants incorrects"
   },
   en: {
     // Header
@@ -189,6 +193,10 @@ export const translations = {
     price: "Final Price",
     validate: "Validate",
     cancel: "Cancel",
-    save: "Save"
+    save: "Save",
+    label_depot: "Drop-off",
+    label_arrival: "Arrival",
+    welcome: "Welcome",
+    login_error: "Invalid credentials"
   }
 };

@@ -354,8 +354,8 @@ export default function Backoffice() {
                                             </TableCell>
                                             <TableCell className="hidden md:table-cell">
                                                 <div className="flex flex-col text-sm">
-                                                    <span className="text-slate-500">Dépôt: {new Date(p.created_at).toLocaleDateString()}</span>
-                                                    <span className="font-bold text-slate-700">Arrivée: {new Date(p.estimated_arrival).toLocaleDateString()}</span>
+                                                    <span className="text-slate-500">{t('label_depot')}: {new Date(p.created_at).toLocaleDateString()}</span>
+                                                    <span className="font-bold text-slate-700">{t('label_arrival')}: {new Date(p.estimated_arrival).toLocaleDateString()}</span>
                                                 </div>
                                             </TableCell>
                                             <TableCell>
