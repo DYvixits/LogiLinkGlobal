@@ -4,7 +4,7 @@ from datetime import datetime
 import json
 
 class UserManagementTester:
-    def __init__(self, base_url="https://parcel-bridge-2.preview.emergentagent.com"):
+    def __init__(self, base_url="https://package-tracker-eu.preview.emergentagent.com"):
         self.base_url = base_url
         self.tests_run = 0
         self.tests_passed = 0
