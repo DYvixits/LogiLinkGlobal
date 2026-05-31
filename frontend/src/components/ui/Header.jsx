@@ -30,6 +30,7 @@ export function Header() {
             <User className="h-4 w-4" /> {t('nav_admin')}
           </Link>
           <button 
+            data-testid="language-toggle-button"
             onClick={toggleLanguage}
             className="flex items-center gap-1 text-sm font-bold uppercase bg-slate-100 px-2 py-1 rounded hover:bg-slate-200 transition-colors"
           >
