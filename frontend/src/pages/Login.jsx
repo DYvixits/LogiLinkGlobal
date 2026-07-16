@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'sonner';
-import { Package, User, Lock, Loader2, Globe } from 'lucide-react';
+import { User, Lock, Loader2, Globe } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -49,7 +49,7 @@ export default function Login() {
 
       <div className="relative z-10 w-full max-w-md">
         <div className="flex flex-col items-center mb-8">
-          <div className="bg-orange-600 text-white p-3 rounded-2xl mb-4"><Package className="h-7 w-7" /></div>
+          <img src="/logo.png" alt="LOGILINK GLOBAL" className="h-16 w-auto mb-4" />
           <h1 className="text-3xl font-heading font-bold text-white">{t('login_title')}</h1>
           <p className="text-slate-400 text-sm mt-1">{t('login_subtitle')}</p>
         </div>

@@ -166,7 +166,7 @@ export default function Backoffice() {
       {/* SIDEBAR (desktop) */}
       <aside className="hidden lg:flex flex-col w-64 bg-slate-900 text-white fixed h-screen">
         <div className="p-6 flex items-center gap-2.5 border-b border-white/10">
-          <div className="bg-orange-600 p-2 rounded-lg"><Package className="h-5 w-5" /></div>
+          <img src="/logo.png" alt="LOGILINK" className="h-8 w-auto" />
           <span className="font-heading font-bold text-lg">LOGILINK</span>
         </div>
         <nav className="flex-1 p-4 space-y-1">
@@ -196,7 +196,7 @@ export default function Backoffice() {
         {/* Topbar */}
         <div className="bg-white border-b border-slate-200 sticky top-0 z-30 px-4 md:px-8 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3 lg:hidden">
-            <div className="bg-slate-900 p-1.5 rounded-lg text-white"><Package className="h-4 w-4" /></div>
+            <div className="bg-slate-900 p-1 rounded-lg"><img src="/logo.png" alt="LOGILINK" className="h-5 w-auto" /></div>
             <span className="font-heading font-bold">LOGILINK</span>
           </div>
           <h1 className="hidden lg:block text-lg font-heading font-bold text-slate-900">{navItems.find(n => n.id === view)?.label}</h1>

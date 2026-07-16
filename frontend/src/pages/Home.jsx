@@ -3,9 +3,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
   ArrowRight, Search, ShieldCheck, Route, UserX, Wallet,
   FileText, PackageCheck, CalendarClock, Truck, Star, Plus, Minus,
-  MapPin, Package, Mail, Phone
+  MapPin
 } from 'lucide-react';
 import { Header } from '../components/ui/Header';
+import { Footer } from '../components/ui/Footer';
 import axios from 'axios';
 import { useLanguage } from '../contexts/LanguageContext';
 
@@ -225,37 +226,7 @@ export default function Home() {
       </section>
 
       {/* FOOTER */}
-      <footer className="bg-slate-900 text-slate-400 pt-16 pb-8 mt-auto">
-        <div className="container grid md:grid-cols-3 gap-10">
-          <div>
-            <div className="flex items-center gap-2.5 mb-4">
-              <div className="bg-orange-600 text-white p-2 rounded-lg"><Package className="h-5 w-5" /></div>
-              <span className="text-xl font-heading font-bold text-white">LOGILINK GLOBAL</span>
-            </div>
-            <p className="text-sm max-w-xs">{t('footer_tagline')}</p>
-          </div>
-          <div>
-            <h4 className="text-white font-semibold mb-4 text-sm uppercase tracking-wider">{t('footer_nav')}</h4>
-            <ul className="space-y-2 text-sm">
-              <li><Link to="/" className="hover:text-orange-400 transition-colors">{t('nav_home')}</Link></li>
-              <li><Link to="/track" className="hover:text-orange-400 transition-colors">{t('nav_track')}</Link></li>
-              <li><Link to="/send?dir=EU_TO_CM" className="hover:text-orange-400 transition-colors">{t('nav_send')}</Link></li>
-              <li><Link to="/backoffice" className="hover:text-orange-400 transition-colors">{t('nav_admin')}</Link></li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="text-white font-semibold mb-4 text-sm uppercase tracking-wider">{t('footer_contact')}</h4>
-            <ul className="space-y-2 text-sm">
-              <li className="flex items-center gap-2"><MapPin className="h-4 w-4 text-orange-500" /> Via Roma 35, 26866 Lodi, Italie</li>
-              <li className="flex items-center gap-2"><Phone className="h-4 w-4 text-orange-500" /> +39 3287091255</li>
-              <li className="flex items-center gap-2"><Mail className="h-4 w-4 text-orange-500" /> support@logilink.com</li>
-            </ul>
-          </div>
-        </div>
-        <div className="container mt-12 pt-6 border-t border-white/10 text-center text-xs text-slate-500 font-mono">
-          {t('footer_text')}
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

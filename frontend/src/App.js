@@ -17,6 +17,7 @@ import Send from './pages/Send';
 import Tracking from './pages/Tracking';
 import Backoffice from './pages/Backoffice';
 import Login from './pages/Login';
+import Legal from './pages/Legal';
 
 function App() {
   return (
@@ -29,6 +30,10 @@ function App() {
             <Route path="/track" element={<Tracking />} />
             <Route path="/backoffice" element={<Backoffice />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/cgv" element={<Legal doc="cgv" />} />
+            <Route path="/cgu" element={<Legal doc="cgu" />} />
+            <Route path="/mentions-legales" element={<Legal doc="mentions" />} />
+            <Route path="/confidentialite" element={<Legal doc="privacy" />} />
           </Routes>
         </BrowserRouter>
         <Toaster position="top-right" />

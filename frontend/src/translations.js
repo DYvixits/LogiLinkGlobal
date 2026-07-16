@@ -87,6 +87,13 @@ export const translations = {
     // Footer
     footer_tagline: "Transport de colis fiable entre l'Europe et le Cameroun.",
     footer_text: "LOGILINK GLOBAL © 2025. Transport maritime et aérien.",
+    footer_legal: "Légal",
+    legal_cgv: "Conditions Générales de Vente",
+    legal_cgu: "Conditions Générales d'Utilisation",
+    legal_mentions: "Mentions légales",
+    legal_privacy: "Politique de confidentialité",
+    footer_made_by: "Réalisé par",
+    footer_comm_by: "Communication par",
     footer_nav: "Navigation",
     footer_contact: "Contact",
 
@@ -385,6 +392,13 @@ export const translations = {
 
     footer_tagline: "Reliable parcel transport between Europe and Cameroon.",
     footer_text: "LOGILINK GLOBAL © 2025. Maritime and air transport.",
+    footer_legal: "Legal",
+    legal_cgv: "Terms of Sale",
+    legal_cgu: "Terms of Use",
+    legal_mentions: "Legal notice",
+    legal_privacy: "Privacy Policy",
+    footer_made_by: "Built by",
+    footer_comm_by: "Communication by",
     footer_nav: "Navigation",
     footer_contact: "Contact",
 

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Package, Globe, Menu, X } from 'lucide-react';
+import { Globe, Menu, X } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 export function Header() {
@@ -18,8 +18,8 @@ export function Header() {
     <header className="border-b border-slate-200 bg-white/80 backdrop-blur-md sticky top-0 z-50">
       <div className="container flex h-16 items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5 group" data-testid="logo-link">
-          <div className="bg-slate-900 text-white p-2 rounded-lg group-hover:bg-orange-600 transition-colors">
-            <Package className="h-5 w-5" />
+          <div className="bg-slate-900 p-1.5 rounded-lg group-hover:bg-slate-800 transition-colors">
+            <img src="/logo.png" alt="LOGILINK GLOBAL" className="h-6 w-auto" />
           </div>
           <span className="text-xl font-heading font-bold tracking-tight text-slate-900">
             LOGILINK <span className="text-orange-600">GLOBAL</span>
