@@ -243,6 +243,69 @@ export const translations = {
     status_CANCELLED: "Annulé",
     status_LOST: "Perdu",
     status_DAMAGED: "Endommagé",
+
+    // Phase 2 nav
+    nav_clients: "Clients",
+    nav_invoices: "Facturation",
+    nav_agencies: "Agences",
+    nav_settings: "Paramètres",
+    nav_integrations: "Intégrations",
+
+    // Clients
+    clients_title: "Clients",
+    clients_subtitle: "Historique, totaux et statistiques par client.",
+    col_parcels_count: "Colis",
+    col_total_spent: "Total dépensé",
+    col_last: "Dernier envoi",
+
+    // Invoices
+    invoices_title: "Facturation",
+    invoices_subtitle: "Factures, reçus et paiements.",
+    new_invoice: "Nouvelle facture",
+    col_invoice: "Facture",
+    col_client: "Client",
+    col_total: "Total",
+    col_inv_status: "Paiement",
+    inv_paid: "Payée",
+    inv_partial: "Partielle",
+    inv_unpaid: "Non payée",
+    pay: "Encaisser",
+    download: "Télécharger",
+    tracking_id_label: "N° de suivi du colis",
+    discount_label: "Remise",
+    create: "Créer",
+    amount_label: "Montant reçu",
+    invoice_hint: "Le prix est calculé automatiquement selon le poids et la tarification.",
+
+    // Agencies
+    agencies_admin_title: "Agences",
+    new_agency: "Nouvelle agence",
+    col_code: "Code",
+    col_name: "Nom",
+    col_city: "Ville",
+    col_country: "Pays",
+    col_phone: "Téléphone",
+
+    // Settings
+    settings_title: "Tarification",
+    settings_subtitle: "Grille de prix, TVA et devise.",
+    price_eu_cm: "Prix Europe → Cameroun",
+    price_cm_eu: "Prix Cameroun → Europe",
+    vat: "TVA",
+    currency: "Devise",
+    save_settings: "Enregistrer",
+
+    // Integrations
+    integrations_title: "Intégrations e-commerce",
+    integrations_subtitle: "Connectez vos boutiques en ligne pour créer les expéditions automatiquement.",
+    new_key: "Nouvelle clé API",
+    key_label: "Nom de la boutique",
+    revoke: "Révoquer",
+    revoked: "Révoquée",
+    no_keys: "Aucune clé API. Créez-en une pour connecter votre boutique.",
+    api_doc: "Documentation API",
+    api_doc_intro: "Envoyez une commande pour créer automatiquement une expédition.",
+    api_doc_response: "Réponse : { tracking_id, tracking_url, status }.",
   },
   en: {
     nav_home: "Home",
@@ -468,5 +531,68 @@ export const translations = {
     status_CANCELLED: "Cancelled",
     status_LOST: "Lost",
     status_DAMAGED: "Damaged",
+
+    // Phase 2 nav
+    nav_clients: "Clients",
+    nav_invoices: "Invoicing",
+    nav_agencies: "Agencies",
+    nav_settings: "Settings",
+    nav_integrations: "Integrations",
+
+    // Clients
+    clients_title: "Clients",
+    clients_subtitle: "History, totals and stats per client.",
+    col_parcels_count: "Parcels",
+    col_total_spent: "Total spent",
+    col_last: "Last shipment",
+
+    // Invoices
+    invoices_title: "Invoicing",
+    invoices_subtitle: "Invoices, receipts and payments.",
+    new_invoice: "New invoice",
+    col_invoice: "Invoice",
+    col_client: "Client",
+    col_total: "Total",
+    col_inv_status: "Payment",
+    inv_paid: "Paid",
+    inv_partial: "Partial",
+    inv_unpaid: "Unpaid",
+    pay: "Collect",
+    download: "Download",
+    tracking_id_label: "Parcel tracking no",
+    discount_label: "Discount",
+    create: "Create",
+    amount_label: "Amount received",
+    invoice_hint: "The price is computed automatically from weight and pricing.",
+
+    // Agencies
+    agencies_admin_title: "Agencies",
+    new_agency: "New agency",
+    col_code: "Code",
+    col_name: "Name",
+    col_city: "City",
+    col_country: "Country",
+    col_phone: "Phone",
+
+    // Settings
+    settings_title: "Pricing",
+    settings_subtitle: "Price grid, VAT and currency.",
+    price_eu_cm: "Price Europe → Cameroon",
+    price_cm_eu: "Price Cameroon → Europe",
+    vat: "VAT",
+    currency: "Currency",
+    save_settings: "Save",
+
+    // Integrations
+    integrations_title: "E-commerce integrations",
+    integrations_subtitle: "Connect your online stores to create shipments automatically.",
+    new_key: "New API key",
+    key_label: "Store name",
+    revoke: "Revoke",
+    revoked: "Revoked",
+    no_keys: "No API key yet. Create one to connect your store.",
+    api_doc: "API documentation",
+    api_doc_intro: "Send an order to automatically create a shipment.",
+    api_doc_response: "Response: { tracking_id, tracking_url, status }.",
   }
 };

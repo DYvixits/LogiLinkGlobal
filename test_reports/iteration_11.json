@@ -1,0 +1,38 @@
+{
+  "summary": "Phase 2 full E2E validation of LOGILINK GLOBAL (Clients, Invoices/Facturation, Agences multi-sites, Settings/pricing, E-commerce Integrations + RBAC nav gating + agency scoping + Phase 1 regression). Backend: 36/36 pytest PASSED covering auth (admin/operateur/superviseur), 401/403 RBAC, agencies CRUD (4 seeded AG-LODI/AG-PARIS/AG-DOUALA/AG-YAOUNDE + create/delete), settings read+update+persist, clients derivation & detail, invoice full lifecycle (create computes subtotal/discount/vat/total, sets parcel INVOICED, rejects no-weight w/ 400, rejects duplicate w/ 400, pay marks parcel PAID, PDF returns application/pdf), e-commerce X-API-Key protection (401 without key, 403 with bad key, 200 with valid key creates parcel with source=ecommerce & correct agency_origin/destination), agency scoping (superviseur AG-DOUALA sees strict subset of parcels all touching AG-DOUALA; admin sees all). Frontend: admin login->/backoffice shows all 9 nav items (dashboard/parcels/clients/invoices/agencies/integrations/users/settings/audit). ClientsView: 58 rows, row click opens modal with parcel history + StatusBadge. InvoicesView: new-invoice-btn -> inv-tracking + inv-discount + inv-create creates invoice (LOGI-Y653TO -> INV-181936, weight 3.5kg × 8€/kg × 90% = 25.2 EUR), PDF href correct, pay-{num} + prompt(99999) marks status Payée; parcel row confirms Payée badge. AgenciesView: 4 seeded cards + new-agency-btn+ag-save creates TEST-UI-{ts} card. SettingsView: VAT 0->3.5 saved, page reload confirms persisted, then restored. IntegrationsView: new-key-btn+key-label+key-create creates apikey-row with sk_live_... key + copy + Revoke; API doc panel shows POST /api/integrations/shipments + payload. Dashboard 12/12 KPI cards render. Regression: Home language-toggle-button, Send page still has Italy hub (Lodi/Via Roma/Simo Patrice) intact. RBAC nav gating: operator sees ONLY dashboard/parcels/clients/invoices (agencies/integrations/users/settings/audit all hidden as expected); operator can view Clients (52 rows) + Invoices (3 rows).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Backoffice (Operator)", "issues": ["Post-login toast 'Bienvenue …' still hardcoded French regardless of language toggle - carried over from iteration_9/10, still not fixed but very minor."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/backend_test.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "(carried-over minor i18n) Translate 'Bienvenue {name}' welcome toast via t() so it respects language toggle."
+  ],
+  "critical_code_review_comments": [
+    "server.py is now 851 lines with routes+seed+PDF+auth+agencies+invoices+integrations all in one module; strongly recommend splitting into routers/services/pdf modules before Phase 3.",
+    "InvoicesView.pay() uses window.prompt() for amount input — works but not ideal UX; consider a proper modal for consistency and easier testability.",
+    "AgenciesView.remove uses window.confirm and is not gated by any check for parcels referencing the agency — deleting a live agency could orphan parcels' agency_origin/destination. Consider soft-delete or reference check.",
+    "IntegrationsView shows the full sk_live_ key in the list forever (not just on creation). For security best practice, show key only on creation then mask like 'sk_live_...abcd' afterwards. Minor issue for an internal MVP.",
+    "PATCH /api/invoices/{num}/pay accepts overpayment silently (paid > total still marks 'paid'); could add validation to cap or reject overpay.",
+    "SettingsView has no basic validation (negative prices, non-numeric currency, empty string). Save happily persists garbage values.",
+    "Invoice PDF endpoint /api/invoices/{num}/pdf is PUBLIC (no auth dependency) — same pattern as parcel ticket PDF, but invoices contain client/pricing PII. Consider requiring auth or a signed short-lived URL for invoices.",
+    "MongoDB _id correctly excluded via projection ({_id:0}) everywhere including new endpoints — good.",
+    "generate_invoice_pdf hardcodes '€' fallback via 'EUR' but uses inv['currency'] elsewhere — fine for now since only EUR is used.",
+    "All new components use process.env.REACT_APP_BACKEND_URL and data-testid attributes — excellent testability."
+  ],
+  "updated_files": ["/app/backend/tests/backend_test.py"],
+  "success_rate": {"backend": "100% (36/36 pytest)", "frontend": "100% of Phase 2 flows + full Phase 1 regression"},
+  "test_credentials": "admin/admin123, operateur/op123 (AG-LODI), superviseur/super123 (AG-DOUALA) — all verified from /app/memory/test_credentials.md (superviseur was not in that file — please add).",
+  "seed_data_creation": "During tests: several TEST_ prefixed parcels (via public POST) + 1 TEST_user_* + a few TEST-AG-* agencies (auto-deleted) + TEST_key_* API keys (revoked) + TEST-UI-{ts} agency (left behind, admin can remove) + one paid invoice INV-181936. No production/seed data corrupted.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Phase 2 fully green. Backend: 36 pytest cases in /app/backend/tests/backend_test.py cover Phase 1 + Phase 2. Frontend: 5 new views (ClientsView, InvoicesView, AgenciesView, SettingsView, IntegrationsView) all render + wire correctly to backend; RBAC gating in Backoffice.jsx sidebar works correctly for admin (9 items) vs operator (4 items). Invoice creation requires parcel.weight_kg > 0 (400 else) and each parcel can only be invoiced once. Agency scoping: superviseur AG-DOUALA is the correct probe (operateur/AG-LODI sees everything because LODI is the hub on every route). Notifications /api/notify/simulate remains MOCKED — deferred to Phase 3.",
+  "rca_of_the_issue": "N/A — no bugs found."
+}

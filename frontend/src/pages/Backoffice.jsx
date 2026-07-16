@@ -5,7 +5,8 @@ import { toast } from 'sonner';
 import {
   LayoutDashboard, Package, Users, ScrollText, LogOut, PlusCircle, Search,
   RefreshCw, Truck, CheckCircle2, TrendingUp, Wallet, Weight, Box, UserRound,
-  AlertTriangle, Clock, User, Shield, X, ChevronRight
+  AlertTriangle, Clock, User, Shield, X, ChevronRight,
+  FileText, Building2, Settings2, Plug
 } from 'lucide-react';
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
@@ -17,6 +18,11 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { StatusBadge } from '../components/StatusBadge';
 import { Timeline } from '../components/Timeline';
 import { ALL_STATUSES } from '../lib/status';
+import ClientsView from '../components/backoffice/ClientsView';
+import InvoicesView from '../components/backoffice/InvoicesView';
+import AgenciesView from '../components/backoffice/AgenciesView';
+import SettingsView from '../components/backoffice/SettingsView';
+import IntegrationsView from '../components/backoffice/IntegrationsView';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const eur = (n) => `${Number(n || 0).toLocaleString('fr-FR', { maximumFractionDigits: 0 })} €`;
@@ -144,7 +150,15 @@ export default function Backoffice() {
   const navItems = [
     { id: 'dashboard', icon: LayoutDashboard, label: t('nav_dashboard') },
     { id: 'parcels', icon: Package, label: t('nav_parcels') },
-    ...(user.role === 'admin' ? [{ id: 'users', icon: Users, label: t('nav_users') }, { id: 'audit', icon: ScrollText, label: t('nav_audit') }] : []),
+    { id: 'clients', icon: UserRound, label: t('nav_clients') },
+    { id: 'invoices', icon: FileText, label: t('nav_invoices') },
+    ...(user.role === 'admin' ? [
+      { id: 'agencies', icon: Building2, label: t('nav_agencies') },
+      { id: 'integrations', icon: Plug, label: t('nav_integrations') },
+      { id: 'users', icon: Users, label: t('nav_users') },
+      { id: 'settings', icon: Settings2, label: t('nav_settings') },
+      { id: 'audit', icon: ScrollText, label: t('nav_audit') },
+    ] : []),
   ];
 
   return (
@@ -218,6 +232,11 @@ export default function Backoffice() {
           )}
           {!loading && view === 'users' && <UsersView users={users} t={t} onNew={() => setNewUserOpen(true)} />}
           {!loading && view === 'audit' && <AuditView audit={audit} />}
+          {!loading && view === 'clients' && <ClientsView />}
+          {!loading && view === 'invoices' && <InvoicesView />}
+          {!loading && view === 'agencies' && <AgenciesView />}
+          {!loading && view === 'settings' && <SettingsView />}
+          {!loading && view === 'integrations' && <IntegrationsView />}
         </main>
       </div>
 
