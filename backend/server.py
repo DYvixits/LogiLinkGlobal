@@ -13,7 +13,10 @@ import string
 import io
 import asyncio
 import secrets
+import base64
+import pyotp
 import qrcode
+from openpyxl import Workbook
 from passlib.context import CryptContext
 from jose import JWTError, jwt
 from reportlab.lib import colors
@@ -83,10 +86,19 @@ class UserCreate(User):
     password: str
 
 class Token(BaseModel):
-    access_token: str
-    token_type: str
-    role: str
-    full_name: str
+    access_token: Optional[str] = None
+    token_type: Optional[str] = None
+    role: Optional[str] = None
+    full_name: Optional[str] = None
+    require_2fa: bool = False
+    mfa_token: Optional[str] = None
+
+class TwoFACode(BaseModel):
+    code: str
+
+class MFAVerify(BaseModel):
+    mfa_token: str
+    code: str
 
 class SenderReceiverInfo(BaseModel):
     name: str
@@ -147,6 +159,27 @@ def create_access_token(data: dict):
     expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+TOTP_ISSUER = "LOGILINK GLOBAL"
+MFA_TOKEN_EXPIRE_MINUTES = 5
+
+def create_mfa_token(username: str):
+    expire = datetime.now(timezone.utc) + timedelta(minutes=MFA_TOKEN_EXPIRE_MINUTES)
+    return jwt.encode({"sub": username, "typ": "mfa", "exp": expire}, SECRET_KEY, algorithm=ALGORITHM)
+
+def build_qr_data_url(uri: str):
+    qr = qrcode.QRCode(box_size=8, border=2)
+    qr.add_data(uri)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color="black", back_color="white")
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    return "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode()
+
+def build_access_response(user: dict) -> dict:
+    token = create_access_token(data={"sub": user["username"], "role": user["role"]})
+    return {"access_token": token, "token_type": "bearer", "role": user["role"],
+            "full_name": user["full_name"], "require_2fa": False}
 
 async def get_current_user(token: str = Depends(oauth2_scheme)):
     credentials_exception = HTTPException(
@@ -408,6 +441,62 @@ def generate_invoice_pdf(inv: dict):
     buffer.seek(0)
     return buffer
 
+def generate_report_excel(period, parcels, summary):
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Résumé"
+    ws.append(["Rapport LOGILINK GLOBAL", period])
+    ws.append(["Généré le", datetime.now().strftime("%d/%m/%Y %H:%M")])
+    ws.append([])
+    ws.append(["Total colis", summary["total"]])
+    ws.append(["Encaissé (€)", summary["revenue_collected"]])
+    ws.append(["Reste à encaisser (€)", summary["revenue_pending"]])
+    ws.append(["Poids total (kg)", summary["total_weight"]])
+    ws.append([])
+    ws.append(["Statut", "Nombre"])
+    for k, v in summary["status_counts"].items():
+        ws.append([k, v])
+    ws2 = wb.create_sheet("Colis")
+    ws2.append(["N° Suivi", "Direction", "Statut", "Expéditeur", "Destinataire", "Ville dép.", "Ville arr.", "Poids (kg)", "Prix (€)", "Créé le"])
+    for p in parcels:
+        ws2.append([p.get("tracking_id"), p.get("direction"), p.get("status"),
+                    p.get("sender", {}).get("name"), p.get("receiver", {}).get("name"),
+                    p.get("sender", {}).get("city"), p.get("receiver", {}).get("city"),
+                    p.get("weight_kg"), p.get("final_price"), (p.get("created_at") or "")[:10]])
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    return buf
+
+def generate_report_pdf(period, parcels, summary):
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4)
+    styles = getSampleStyleSheet()
+    story = []
+    story.append(Paragraph(f"RAPPORT {period.upper()} — LOGILINK GLOBAL", ParagraphStyle('T', parent=styles['Heading1'], fontSize=20, textColor=colors.HexColor('#0F172A'))))
+    story.append(Paragraph(datetime.now().strftime("%d/%m/%Y %H:%M"), styles['Normal']))
+    story.append(Spacer(1, 0.3 * inch))
+    srows = [["Total colis", str(summary["total"])], ["Encaissé", f"{summary['revenue_collected']} €"],
+             ["Reste à encaisser", f"{summary['revenue_pending']} €"], ["Poids total", f"{summary['total_weight']} kg"]]
+    st = Table(srows, colWidths=[3 * inch, 2 * inch])
+    st.setStyle(TableStyle([('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#E2E8F0')), ('FONTSIZE', (0, 0), (-1, -1), 11), ('PADDING', (0, 0), (-1, -1), 6)]))
+    story.append(st)
+    story.append(Spacer(1, 0.3 * inch))
+    story.append(Paragraph("Colis de la période", styles['Heading2']))
+    data = [["N° Suivi", "Statut", "Trajet", "Prix"]]
+    for p in parcels[:40]:
+        data.append([p.get("tracking_id"), p.get("status"),
+                     f"{p.get('sender', {}).get('city', '')} > {p.get('receiver', {}).get('city', '')}",
+                     f"{p.get('final_price', 0)} €"])
+    t = Table(data, colWidths=[1.6 * inch, 1.4 * inch, 2.2 * inch, 1 * inch])
+    t.setStyle(TableStyle([('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#E2E8F0')),
+                           ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#0F172A')),
+                           ('TEXTCOLOR', (0, 0), (-1, 0), colors.white), ('FONTSIZE', (0, 0), (-1, -1), 8), ('PADDING', (0, 0), (-1, -1), 5)]))
+    story.append(t)
+    doc.build(story)
+    buffer.seek(0)
+    return buffer
+
 # --- Auth Routes ---
 
 @api_router.post("/auth/login", response_model=Token)
@@ -417,12 +506,63 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
         raise HTTPException(status_code=400, detail="Identifiant ou mot de passe incorrect")
     if user.get("disabled"):
         raise HTTPException(status_code=403, detail="Compte désactivé")
-    access_token = create_access_token(data={"sub": user["username"], "role": user["role"]})
-    return {"access_token": access_token, "token_type": "bearer", "role": user["role"], "full_name": user["full_name"]}
+    if user.get("twofa", {}).get("enabled"):
+        return {"require_2fa": True, "mfa_token": create_mfa_token(user["username"])}
+    return build_access_response(user)
+
+@api_router.post("/auth/2fa/verify", response_model=Token)
+async def verify_2fa_login(payload: MFAVerify):
+    try:
+        claims = jwt.decode(payload.mfa_token, SECRET_KEY, algorithms=[ALGORITHM])
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Session expirée, reconnectez-vous")
+    if claims.get("typ") != "mfa":
+        raise HTTPException(status_code=401, detail="Jeton invalide")
+    user = await users_collection.find_one({"username": claims.get("sub")})
+    if not user or not user.get("twofa", {}).get("enabled"):
+        raise HTTPException(status_code=401, detail="2FA non activé")
+    totp = pyotp.TOTP(user["twofa"]["secret"])
+    if not totp.verify(payload.code, valid_window=1):
+        raise HTTPException(status_code=401, detail="Code incorrect")
+    return build_access_response(user)
 
 @api_router.get("/auth/me")
 async def read_me(current_user: dict = Depends(get_current_user)):
-    return {"username": current_user["username"], "full_name": current_user["full_name"], "role": current_user["role"]}
+    return {"username": current_user["username"], "full_name": current_user["full_name"],
+            "role": current_user["role"], "twofa_enabled": current_user.get("twofa", {}).get("enabled", False)}
+
+@api_router.post("/auth/2fa/setup")
+async def setup_2fa(current_user: dict = Depends(get_current_user)):
+    secret = pyotp.random_base32()
+    await users_collection.update_one({"username": current_user["username"]},
+                                      {"$set": {"twofa.pending_secret": secret, "twofa.enabled": current_user.get("twofa", {}).get("enabled", False)}})
+    uri = pyotp.TOTP(secret).provisioning_uri(name=current_user["username"], issuer_name=TOTP_ISSUER)
+    return {"provisioning_uri": uri, "qr_data_url": build_qr_data_url(uri)}
+
+@api_router.post("/auth/2fa/enable")
+async def enable_2fa(payload: TwoFACode, current_user: dict = Depends(get_current_user)):
+    pending = current_user.get("twofa", {}).get("pending_secret")
+    if not pending:
+        raise HTTPException(status_code=400, detail="Aucune configuration 2FA en cours")
+    if not pyotp.TOTP(pending).verify(payload.code, valid_window=1):
+        raise HTTPException(status_code=400, detail="Code incorrect")
+    await users_collection.update_one({"username": current_user["username"]},
+                                      {"$set": {"twofa.enabled": True, "twofa.secret": pending},
+                                       "$unset": {"twofa.pending_secret": ""}})
+    await log_audit(current_user["username"], "ENABLE_2FA", current_user["username"])
+    return {"ok": True}
+
+@api_router.post("/auth/2fa/disable")
+async def disable_2fa(payload: TwoFACode, current_user: dict = Depends(get_current_user)):
+    secret = current_user.get("twofa", {}).get("secret")
+    if not secret:
+        raise HTTPException(status_code=400, detail="2FA non activé")
+    if not pyotp.TOTP(secret).verify(payload.code, valid_window=1):
+        raise HTTPException(status_code=400, detail="Code incorrect")
+    await users_collection.update_one({"username": current_user["username"]},
+                                      {"$set": {"twofa.enabled": False}, "$unset": {"twofa.secret": "", "twofa.pending_secret": ""}})
+    await log_audit(current_user["username"], "DISABLE_2FA", current_user["username"])
+    return {"ok": True}
 
 # --- Users (admin) ---
 
@@ -791,8 +931,17 @@ async def invoice_pdf(number: str):
                              headers={"Content-Disposition": f"attachment; filename={number}.pdf"})
 
 # ---------- E-commerce integration (generic inbound webhook) ----------
+class DefaultParty(BaseModel):
+    name: str = ""
+    phone: str = ""
+    city: str = ""
+    country: Optional[str] = None
+
 class ApiKeyCreate(BaseModel):
     label: str
+    platform: Literal["generic", "shopify", "woocommerce"] = "generic"
+    default_direction: Literal["EU_TO_CM", "CM_TO_EU"] = "EU_TO_CM"
+    default_sender: Optional[DefaultParty] = None
 
 class EcomShipment(BaseModel):
     direction: Literal["EU_TO_CM", "CM_TO_EU"]
@@ -810,7 +959,10 @@ async def list_keys(current_user: dict = Depends(require_roles("admin", "directo
 @api_router.post("/integrations/keys")
 async def create_key(body: ApiKeyCreate, current_user: dict = Depends(require_roles("admin", "director"))):
     key = "sk_live_" + secrets.token_hex(16)
-    doc = {"key": key, "label": body.label, "created_at": now_iso(), "created_by": current_user["username"], "active": True}
+    doc = {"key": key, "label": body.label, "platform": body.platform,
+           "default_direction": body.default_direction,
+           "default_sender": body.default_sender.dict() if body.default_sender else None,
+           "created_at": now_iso(), "created_by": current_user["username"], "active": True}
     await apikeys_collection.insert_one(doc)
     await log_audit(current_user["username"], "CREATE_APIKEY", body.label)
     doc.pop("_id", None)
