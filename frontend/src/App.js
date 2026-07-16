@@ -1,8 +1,16 @@
 import React, { useEffect, useState } from "react";
 import "@/App.css";
+import axios from "axios";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Toaster } from 'sonner';
 import { LanguageProvider } from './contexts/LanguageContext';
+
+// Attach JWT token (when present) to every request; public endpoints ignore it.
+axios.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
 
 import Home from './pages/Home';
 import Send from './pages/Send';
