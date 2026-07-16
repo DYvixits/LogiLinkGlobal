@@ -1,43 +1,51 @@
-# PRD — LOGILINK GLOBAL (Plateforme logistique Cameroun ↔ Europe)
+# PRD — LOGILINK GLOBAL (Plateforme logistique premium Cameroun ↔ Europe)
 
-## Original Problem Statement
-Web-based logistics platform for sending packages between Cameroon and Europe (via Italy).
-- Fixed schedules: Europe → Cameroon (Fridays), Cameroon → Europe (Saturdays).
-- No client sign-up. Users fill a form, get a printable PDF/QR ticket, and track packages from the homepage.
-- Operator Backoffice (login required): manage packages, update statuses (Received, Shipped, Arrived, Delivered, Incident), assign departure dates, publish schedules, manage users.
-- UI must be extremely simple, mobile-first, "terrain" oriented (no startup jargon).
-- Fixed Italy hub address hardcoded in the send form: **Patrice Simo, Via Roma 35, 26866 Lodi, Italy, +39 3287091255**.
+## Vision
+Transformer LOGILINK GLOBAL en logiciel SaaS logistique **premium** (niveau outils transitaires internationaux), référence en Afrique centrale. Ne PAS repartir de zéro : conserver architecture, routes, identité (navy #0F172A / orange #EA580C / blanc / gris). Améliorer progressivement par phases.
 
-## User preferences
-- **Language: French (primary).** Platform is bilingual FR/EN with a header toggle.
-- Only 2 routes exist: EU→CM and CM→EU. Do NOT add other countries.
+## Contraintes
+- **Langue : Français primaire**, bilingue FR/EN (toggle header, localStorage).
+- **Base de données : MongoDB uniquement** (contrainte environnement — PostgreSQL impossible ici).
+- Seulement 2 routes : EU→CM (départ vendredi) et CM→EU (départ samedi).
+- Adresse hub Italie codée en dur dans le formulaire d'envoi : **Simo Patrice, Via Roma 35, 26866 Lodi, Italie, +39 3287091255**.
+- Notifications SMS/Email/WhatsApp : **SIMULÉES (MOCKED)** pour l'instant (choix utilisateur).
 
 ## Architecture
-- Frontend: React + Shadcn UI + TailwindCSS. i18n via React Context (`contexts/LanguageContext.js` + `translations.js`).
-- Backend: FastAPI + MongoDB (Motor), JWT auth (PyJWT, passlib/bcrypt).
-- Key files: `frontend/src/pages/{Home,Send,Tracking,Login,Backoffice}.jsx`, `components/ui/Header.jsx`, `backend/server.py`.
+- Frontend React 19 + TailwindCSS + Shadcn UI + Recharts + lucide-react + sonner. i18n via `contexts/LanguageContext.js` + `translations.js`.
+- Backend FastAPI + MongoDB (Motor), JWT (python-jose) + passlib bcrypt, RBAC.
+- Fichiers clés front : `pages/{Home,Send,Tracking,Login,Backoffice}.jsx`, `components/{Timeline,StatusBadge}.jsx`, `lib/status.js`, `components/ui/Header.jsx`.
+- Backend : `backend/server.py` (routes, seed, PDF, auth, stats).
 
-## Key API Endpoints
-- `POST /api/auth/login`
-- `POST /api/packages/` (public — send form)
-- `GET /api/packages/{tracking_number}` (public — tracking)
-- `GET /api/packages/` (protected — backoffice)
-- `PUT /api/packages/{tracking_number}/status` (protected)
-- `POST /api/users/` (protected — admin only)
+## Sécurité (Phase 1)
+- JWT_SECRET dans `.env` (plus de secret codé en dur).
+- `require_roles(...)` : routes protégées (liste colis, stats, users, audit). Publiques : POST /parcels (formulaire client), GET /parcels/{id} (suivi), PDF.
+- Journal d'audit (`audit_logs`) sur création user / update colis / update statut.
+- Interceptor axios frontend attache le token automatiquement.
 
-## DB Schema
-- `packages`: { tracking_number, direction, sender, receiver, status, history, type, weight, departure_date, created_at, estimated_arrival }
-- `users`: { username, password_hash, role, created_at }
+## Statuts (17) — workflow + timeline horodatée
+CREATED, REGISTERED, RECEIVED_AT_DEPOT, CONTROLLED, WEIGHED, PACKED, INVOICED, PAID, LOADED, IN_TRANSIT, IN_CUSTOMS, ARRIVED, AVAILABLE, DELIVERED + exceptions CANCELLED, LOST, DAMAGED. Historique = {status, timestamp, author, comment}.
 
-## Implemented (as of 2026-02 / latest fork)
-- Home (tracking input), Send (form w/ hardcoded Italy hub), Tracking pages — no auth.
-- Operator backoffice: KPI dashboard, parcel management table, status lifecycle, user management (Admin/Operator/Supervisor RBAC).
-- JWT auth + seeded admin (`admin`/`admin123`) and operator (`operateur`/`op123`).
-- **Bilingual FR/EN toggle — COMPLETE & TESTED (iteration_9.json, 95%→100% after fixes).** Default FR, persists in localStorage. Italy hub address verified intact in both languages/directions. Fixed remaining i18n gaps: backoffice table labels (Dépôt/Arrivée) and login welcome/error toasts now use `t()`.
+## API principales
+- POST /api/auth/login · GET /api/auth/me
+- POST /api/parcels (public) · GET /api/parcels/{id} (public) · GET /api/parcels/{id}/pdf (public, QR + code-barres Code128)
+- GET /api/parcels (protégé) · PATCH /api/parcels/{id} · PATCH /api/parcels/{id}/status (protégés + historique)
+- GET /api/stats (protégé, KPIs riches) · GET /api/users · POST /api/users (admin) · GET /api/audit (admin)
+- GET /api/schedule · POST /api/notify/simulate (mocked)
 
-## Roadmap / Backlog
-- **P1**: Downloadable/printable PDF ticket with QR code on package creation (libs `qrcode`, `reportlab` installed; logic needs build/verification).
-- **P2**: Real SMS/Email notifications (currently MOCKED/simulated on status update).
+## Modèle colis enrichi
+tracking_id, barcode, direction, sender/receiver (name/phone/city/address/country/email), content_description, nature, weight_kg, volume_m3, dimensions{l,w,h}, declared_value, fragile, insured, final_price, amount_paid, operator, agency_origin/destination, status, history[], created_at, estimated_arrival.
 
-## Mocked
-- SMS and Email notifications on status update are simulated (not real integrations).
+## ✅ Phase 1 — COMPLÈTE & TESTÉE (juin 2026, iteration_10.json : backend 25/25, frontend 100%)
+- Refonte design premium (Stripe/Linear) : radius 0.75rem, ombres douces, micro-animations, hover states, skeleton/loaders, footer riche.
+- Landing marketing : hero, board départs, stats, cartes envoi, comment ça marche, pourquoi nous, témoignages, agences, FAQ, CTA, footer.
+- Suivi public avec timeline verticale horodatée + StatusBadge.
+- Formulaire d'envoi restylé (hub Italie intact) + ticket PDF (QR + code-barres).
+- Backoffice : sidebar + Dashboard (12 KPIs + 3 graphiques Recharts), gestion colis (recherche instantanée, filtres date/statut, actions groupées, drawer détail + timeline + changement statut), utilisateurs (10 rôles), journal d'audit.
+- Sécurité RBAC + audit. Bilingue FR/EN complet (clés status_*, dashboard, landing).
+
+## Roadmap restante
+- **Phase 2 (P1)** : Module Clients dédié (historique, stats par client), Facturation complète (factures/reçus PDF, tarifs auto, remises, taxes, paiements), Agences multi-sites, rôles fins avancés.
+- **Phase 3 (P2)** : Rapports journaliers/mensuels/annuels + export Excel/PDF ; notifications réelles Email/SMS/WhatsApp (Twilio + Resend) ; 2FA.
+
+## Comptes de test
+admin/admin123 · operateur/op123 · superviseur/super123 (voir test_credentials.md)
