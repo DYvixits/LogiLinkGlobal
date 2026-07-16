@@ -1,161 +1,140 @@
+
+
 {
-  "design_system": {
-    "identity": {
-      "name": "LogiLink Global",
-      "archetype": "The Performance Pro (Maritime Edition)",
-      "vibe": "Precision, Global Connection, Industrial Strength",
-      "principles": [
-        "Fusion over Imitation: Mix Swiss precision with Industrial rawness.",
-        "Emotion First: Trust and Speed.",
-        "Content is King: Data is the hero (Tracking numbers, ETAs).",
-        "Zoom In: Focus on the package journey.",
-        "Negative Space: Breathing room for complex data."
-      ]
+  "theme": "light",
+  "typography": {
+    "headings": {
+      "font": "Barlow Condensed",
+      "classes": "font-bold tracking-tight text-slate-900",
+      "strategy": "Keep Barlow Condensed for large marketing headings (H1, H2) to retain the industrial/logistics brand feel, but use it with tight tracking. For dashboard headings where readability is key, switch to Inter with medium/semibold weight."
     },
-    "typography": {
-      "strategy": "The Swiss Brutalist",
-      "headings": {
-        "family": "Barlow Condensed, sans-serif",
-        "weights": ["700", "800"],
-        "usage": "Use for all major section headers and hero text. Tight tracking (-0.02em).",
-        "fallback": "Oswald, sans-serif"
+    "body": {
+      "font": "Inter",
+      "classes": "text-slate-600 leading-relaxed",
+      "strategy": "Use Inter for all body text, dashboard labels, and UI elements. Ensure high contrast against backgrounds."
+    },
+    "mono": {
+      "font": "JetBrains Mono",
+      "classes": "text-xs font-mono text-slate-500",
+      "strategy": "Use strictly for tracking numbers, dates, times, and technical data in tables/timeline."
+    }
+  },
+  "colors": {
+    "primary": {
+      "name": "Navy Blue",
+      "hex": "#0F172A",
+      "tailwind": "slate-900"
+    },
+    "accent": {
+      "name": "International Orange",
+      "hex": "#EA580C",
+      "tailwind": "orange-600"
+    },
+    "backgrounds": {
+      "main": "bg-slate-50",
+      "surface": "bg-white",
+      "dark_surface": "bg-slate-900"
+    },
+    "borders": {
+      "default": "border-slate-200",
+      "subtle": "border-slate-100"
+    },
+    "statuses": {
+      "registered": "bg-slate-100 text-slate-700",
+      "in_transit": "bg-blue-100 text-blue-700",
+      "arrived": "bg-orange-100 text-orange-700",
+      "delivered": "bg-green-100 text-green-700",
+      "incident": "bg-red-100 text-red-700"
+    }
+  },
+  "visual_enhancers": {
+    "radius": "Transition from 0px (sharp) to rounded-xl (12px) for large containers and rounded-lg (8px) for buttons/inputs. This softens the brutalist look into a premium Stripe/Linear aesthetic.",
+    "shadows": "Use very subtle, diffused shadows. shadow-[0_2px_8px_-2px_rgba(15,23,42,0.08)] for cards. Avoid harsh drop shadows.",
+    "borders": "1px solid border-slate-200 on all white surfaces (cards, tables) on a slate-50 background.",
+    "hover_states": "Buttons should lift slightly (-translate-y-[1px]) and increase shadow. Table rows should use hover:bg-slate-50/80.",
+    "transitions": "transition-all duration-200 ease-out"
+  },
+  "components": {
+    "kpi_cards": {
+      "classes": "bg-white rounded-xl border border-slate-200 p-6 shadow-sm flex flex-col gap-2 relative overflow-hidden",
+      "details": "Include a subtle top-right icon container (e.g., bg-orange-50 text-orange-600 p-2 rounded-lg). Use Barlow Condensed for the main numeric value (text-4xl). Add a micro-trend indicator (e.g., +5% this week in green)."
+    },
+    "charts_container": {
+      "classes": "bg-white rounded-xl border border-slate-200 p-6 shadow-sm",
+      "details": "Use Recharts with custom tooltips that match the UI (white bg, rounded-lg, shadow-md). Grid lines should be stroke-slate-100. Lines/Bars should use orange-600 and slate-900."
+    },
+    "data_table": {
+      "classes": "w-full text-sm text-left",
+      "header": "bg-slate-50 border-y border-slate-200 text-slate-500 font-medium py-3 px-4",
+      "row": "border-b border-slate-100 hover:bg-slate-50 transition-colors",
+      "cell": "py-3 px-4"
+    },
+    "status_badges": {
+      "classes": "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border"
+    },
+    "timeline": {
+      "container": "relative pl-6 border-l-2 border-slate-100 space-y-8",
+      "item": "relative",
+      "dot_active": "absolute -left-[31px] w-4 h-4 rounded-full bg-orange-600 ring-4 ring-orange-50",
+      "dot_inactive": "absolute -left-[31px] w-4 h-4 rounded-full bg-slate-300 ring-4 ring-white",
+      "content": "flex flex-col gap-1",
+      "time": "text-xs font-mono text-slate-500",
+      "title": "font-medium text-slate-900"
+    },
+    "buttons": {
+      "primary": "bg-orange-600 hover:bg-orange-700 text-white rounded-lg px-4 py-2 font-medium transition-all shadow-sm",
+      "secondary": "bg-white hover:bg-slate-50 text-slate-900 border border-slate-200 rounded-lg px-4 py-2 font-medium transition-all shadow-sm"
+    },
+    "inputs": {
+      "classes": "w-full border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-600/20 focus:border-orange-600 transition-all outline-none"
+    },
+    "landing_hero": {
+      "classes": "relative bg-slate-900 text-white overflow-hidden py-32",
+      "details": "Use a dark theme for the hero to make it feel premium. Add a subtle radial gradient mesh in the background or a heavily darkened image overlay (bg-slate-900/80). High contrast CTA in orange. Large Barlow Condensed typography."
+    },
+    "skeleton_loaders": {
+      "classes": "animate-pulse bg-slate-200 rounded"
+    }
+  },
+  "layouts": {
+    "dashboard": "Sidebar on the left (w-64 bg-slate-900 text-white) + Topbar (bg-white border-b) + Main Content area (bg-slate-50 p-8).",
+    "public_pages": "Sticky Header (bg-white/80 backdrop-blur-md border-b) + Main Content + Fat Footer (bg-slate-900 py-16)."
+  },
+  "motion": {
+    "micro_interactions": "Add scale-[0.98] active states to buttons. Use framer-motion (or simple CSS classes) for staggering list items in the timeline.",
+    "page_transitions": "Fade-in main content sections on mount."
+  },
+  "media": {
+    "image_urls": {
+      "hero_background": {
+        "url": "https://images.pexels.com/photos/26585021/pexels-photo-26585021.jpeg",
+        "description": "Stunning silhouette of a cargo ship during a vibrant sunset"
       },
-      "body": {
-        "family": "Inter, sans-serif",
-        "weights": ["400", "500"],
-        "usage": "Standard text, UI elements, data tables.",
-        "fallback": "system-ui, sans-serif"
+      "warehouse_section": {
+        "url": "https://images.pexels.com/photos/4487363/pexels-photo-4487363.jpeg",
+        "description": "Bright modern warehouse featuring pallets and storage racks"
       },
-      "mono": {
-        "family": "JetBrains Mono, monospace",
-        "usage": "Tracking numbers, coordinates, timestamps."
+      "delivery_action": {
+        "url": "https://images.pexels.com/photos/4440774/pexels-photo-4440774.jpeg",
+        "description": "Close-up of hands exchanging cardboard boxes indoors"
       }
-    },
-    "colors": {
-      "palette": {
-        "primary": {
-          "name": "Deep Ocean",
-          "hex": "#0F172A",
-          "tailwind": "slate-900",
-          "usage": "Primary buttons, text, strong borders."
-        },
-        "secondary": {
-          "name": "Concrete",
-          "hex": "#F1F5F9",
-          "tailwind": "slate-100",
-          "usage": "Backgrounds, secondary buttons."
-        },
-        "accent": {
-          "name": "International Orange",
-          "hex": "#EA580C",
-          "tailwind": "orange-600",
-          "usage": "CTAs, active states, critical alerts. The 'Signal' color."
-        },
-        "success": {
-          "name": "Signal Green",
-          "hex": "#10B981",
-          "tailwind": "emerald-500",
-          "usage": "Status: Delivered, On Time."
-        },
-        "surface": {
-          "light": "#FFFFFF",
-          "dark": "#020617"
-        }
-      },
-      "gradients": {
-        "hero_overlay": "linear-gradient(180deg, rgba(15, 23, 42, 0) 0%, rgba(15, 23, 42, 0.8) 100%)",
-        "active_border": "linear-gradient(90deg, #EA580C 0%, #F97316 50%, #EA580C 100%)"
-      }
-    },
-    "layout": {
-      "spacing_scale": "Generous (2x standard)",
-      "container_padding": "p-6 md:p-12 lg:p-24",
-      "grid_system": {
-        "marketing": "Mode A: The Tetris Grid (Asymmetrical, 12-col)",
-        "dashboard": "Mode B: High Density Grid (4-col, tight gaps)"
-      },
-      "rules": [
-        "Mobile-First: Start with grid-cols-1.",
-        "No Center-Everything: Use asymmetry for tension.",
-        "Breathing Room: Use negative space to highlight data."
-      ]
-    },
-    "components": {
-      "buttons": {
-        "primary": "bg-slate-900 text-white hover:bg-slate-800 rounded-none uppercase tracking-widest font-bold px-8 py-4 transition-all hover:translate-x-1",
-        "secondary": "border-2 border-slate-200 text-slate-900 hover:border-slate-900 rounded-none uppercase tracking-widest font-bold px-8 py-4",
-        "accent": "bg-orange-600 text-white hover:bg-orange-700 rounded-none uppercase tracking-widest font-bold px-8 py-4 shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px]"
-      },
-      "cards": {
-        "style": "The 'Technical' Look",
-        "border": "1px solid rgba(15, 23, 42, 0.1)",
-        "shadow": "none",
-        "hover": "border-orange-600/50 shadow-lg transition-all duration-300"
-      },
-      "inputs": {
-        "style": "Sharp edges, heavy borders.",
-        "classes": "rounded-none border-2 border-slate-200 focus:border-slate-900 focus:ring-0 bg-transparent p-4"
-      }
-    },
-    "visual_enhancers": {
-      "textures": "Subtle noise overlay on solid backgrounds to reduce digital flatness.",
-      "borders": "Grid Borders: Expose the skeleton. Use border-r and border-b on grid items.",
-      "shadows": "Hard shadows for buttons (Neo-Brutalist touch), soft ambient shadows for floating elements."
-    },
-    "motion": {
-      "transitions": "transition-all duration-300 ease-out",
-      "micro_interactions": "Hover: slight lift (-2px) + border color change.",
-      "scroll": "Use Lenis for smooth scrolling momentum.",
-      "loading": "Industrial progress bars (striped, animated)."
-    },
-    "media": {
-      "image_style": "High contrast, desaturated with preserved accent colors (Orange/Red).",
-      "image_urls": {
-        "hero": {
-          "url": "https://images.unsplash.com/photo-1738194942064-826a6219e5cb",
-          "alt": "Container ship at sunset near Italy",
-          "usage": "Main landing page hero background."
-        },
-        "operations": {
-          "url": "https://images.pexels.com/photos/4484078/pexels-photo-4484078.jpeg",
-          "alt": "Logistics worker with tablet",
-          "usage": "Features section, 'How it works'."
-        },
-        "global_network": {
-          "url": "https://images.unsplash.com/photo-1761926002909-781a45b71030",
-          "alt": "Aerial view of busy port",
-          "usage": "Global network/Stats section."
-        }
-      }
-    },
-    "accessibility": {
-      "contrast": "Ensure 4.5:1 ratio for text. Use APCA for critical data.",
-      "focus_states": "Visible thick outline (2px solid orange) on focus.",
-      "reduced_motion": "Respect user preferences."
-    },
-    "tech_stack": {
-      "framework": "React",
-      "styling": "Tailwind CSS",
-      "components": "Shadcn UI (Customized)",
-      "icons": "Lucide React",
-      "charts": "Recharts / Shadcn Charts"
-    },
-    "instructions_to_main_agent": [
-      "Implement the 'Barlow Condensed' font for all headings.",
-      "Use the 'International Orange' (#EA580C) sparingly but boldly for CTAs.",
-      "Do not use rounded corners > 4px. Keep it sharp and industrial.",
-      "Use the provided image URLs for the respective sections.",
-      "Ensure the 'Tracking' input is the most prominent element on the page.",
-      "For the dashboard, use the 'High Density Grid' layout.",
-      "Apply a subtle noise texture to the background if possible.",
-      "Use 'sonner' for all toast notifications."
-    ],
-    "universal_guidelines": [
-      "Avoid generic 'AI slop' designs. Be bold.",
-      "No gradients on dark colors.",
-      "No 'Inter' for headings.",
-      "Use 'data-testid' on all interactive elements.",
-      "Mobile-first responsive design is mandatory."
-    ]
-  }
+    }
+  },
+  "instructions_to_main_agent": [
+    "DO NOT build from scratch. Preserve existing routing, architecture, and backend integration.",
+    "Apply the styling guidelines to existing components and views.",
+    "Transform the UI from 'sharp brutalist' to 'Stripe-like premium' by adding rounded-lg/xl, subtle shadows, and off-white backgrounds (slate-50).",
+    "Implement the 17-status parcel timeline exactly as defined in the timeline component specs, using JetBrains Mono for timestamps.",
+    "Ensure the Send Parcel form retains the HARDCODED Italy Hub address visually intact.",
+    "Build the dashboard using a layout with a dark sidebar (slate-900) and light main content area (slate-50).",
+    "Add 'data-testid' to all interactive elements.",
+    "Do not use totally transparent backgrounds for sticky headers or dropdowns."
+  ],
+  "UNIVERSAL_GUIDELINES_FOR_MAIN_AGENT": [
+    "Create depth through layered design elements with z-index hierarchy.",
+    "Use glass-morphism effects with backdrop filters (12-24px blur) where applicable.",
+    "Do not center align app container text globally.",
+    "Never use placeholder URLs. Use the provided image URLs.",
+    "Use Sonner for toasts."
+  ]
 }

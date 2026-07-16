@@ -1,0 +1,63 @@
+{
+  "summary": "Frontend-only testing of FR/EN bilingual toggle implementation (React Context API). Verified language toggle button, FR default + localStorage persistence, Home/Send/Tracking/Login/Backoffice render and translate correctly, and CRITICAL Italy hub address (Simo Patrice / Via Roma 35 / 26866 Lodi / +39 3287091255) remains intact in BOTH FR and EN on both directions (EU_TO_CM and CM_TO_EU). admin/admin123 login redirects to /backoffice without Context crashes.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {
+        "flow": "Backoffice parcel table - date column",
+        "issue": "Hardcoded French strings 'Dépôt:' and 'Arrivée:' in the parcel management table do not switch to English when language is toggled to EN (still showing FR). Likely not using t() helper for these labels.",
+        "affected_selectors": ["Backoffice parcels table date column"]
+      },
+      {
+        "flow": "Login success toast",
+        "issue": "Welcome toast 'Bienvenue Administrateur' after login is hardcoded in French and does not translate when language is EN.",
+        "affected_selectors": ["sonner toast on /backoffice after login"]
+      }
+    ],
+    "design_issues": []
+  },
+  "test_report_links": ["/app/test_reports/iteration_9.json"],
+  "action_items": [
+    "Wrap 'Dépôt:' and 'Arrivée:' labels in Backoffice parcels table with t() (add translation keys e.g., label_depot, label_arrival).",
+    "Translate the post-login welcome toast 'Bienvenue Administrateur' using t() (add keys e.g., welcome_admin).",
+    "Optional: 'dashboard' translation key exists in translations.js but isn't rendered as a visible heading on Backoffice. Either render it as a page title or remove the unused key."
+  ],
+  "critical_code_review_comments": [
+    "LanguageContext implementation is clean and correct: state initialized from localStorage with 'fr' default, useEffect persists changes, toggleLanguage swaps fr<->en. No re-render or crash issues observed.",
+    "LanguageProvider correctly wraps BrowserRouter in App.js so all routes consume the context.",
+    "Send.jsx FIXED_ITALY_ADDRESS is an in-component constant rendered directly (not via t()), which is the correct approach - the hub address is a real-world physical address that must never be translated. Verified intact.",
+    "translations.js: 'dashboard' key defined but not consumed in Backoffice page (dead key). Minor cleanup item.",
+    "Backoffice has multiple hardcoded FR strings ('Dépôt:', 'Arrivée:', toast 'Bienvenue Administrateur') that bypass the i18n layer - inconsistent coverage."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (frontend-only as requested)", "frontend": "95%"},
+  "test_credentials": "admin / admin123 (verified working). NOTE: /app/memory/test_credentials.md does NOT exist.",
+  "seed_data_creation": "None. Used existing 20 parcels visible on backoffice.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Bilingual FR/EN toggle is functionally working end-to-end. Default is FR, persists via localStorage 'lang'. Toggle button data-testid='language-toggle-button' present in Header on all pages. Hardcoded Italy hub address in Send.jsx is verified intact in both FR and EN, both directions. Only remaining gaps are 2 hardcoded French strings in Backoffice ('Dépôt:'/'Arrivée:' table labels and login welcome toast 'Bienvenue Administrateur') that should be routed through t(). No Context API crashes/blank screens observed. Login admin/admin123 -> /backoffice works.",
+  "rca_of_the_issue": "Not a bug session - feature verification. Translation gaps in Backoffice are due to certain strings being hardcoded directly in JSX rather than passed through the useLanguage().t() helper. Fix: add translation keys (label_depot, label_arrival, welcome_admin) to /app/frontend/src/translations.js and replace literal strings in Backoffice.jsx with t('...') calls.",
+  "tests_executed": {
+    "PASS": [
+      "Language toggle button present on Home (data-testid=language-toggle-button)",
+      "Default language is FR on fresh load (localStorage cleared)",
+      "Home FR translations: LIAISON DIRECTE, PROCHAINS DÉPARTS, JE VEUX ENVOYER, DE L'EUROPE VERS LE CAMEROUN, DU CAMEROUN VERS L'EUROPE, FR tracking placeholder",
+      "Toggle FR->EN updates UI: DIRECT LINK, NEXT DEPARTURES, I WANT TO SEND, FROM EUROPE TO CAMEROON, FROM CAMEROON TO EUROPE",
+      "localStorage['lang']='en' set, persists across page reload",
+      "Send page (?dir=EU_TO_CM) EN labels render: REGISTER A PARCEL, 1. SENDER, 2. RECEIVER, 3. PARCEL",
+      "CRITICAL: Italy hub intact on Send EU_TO_CM in EN: Simo Patrice, Via Roma 35, 26866, Lodi, +39 3287091255",
+      "CRITICAL: Italy hub intact on Send EU_TO_CM in FR (after toggle)",
+      "CRITICAL: Italy hub intact on Send CM_TO_EU (Italy is receiver)",
+      "Tracking page renders FR (SUIVRE UN COLIS) and toggles to EN (TRACK A PARCEL)",
+      "Tracking invalid ID search returns error (backend 404, displayed)",
+      "Login page renders translated labels (LOGILINK GLOBAL, Username/Password or Identifiant/Mot de passe)",
+      "Login admin/admin123 succeeds and redirects to /backoffice",
+      "Backoffice loads without crash: KPI cards (20 Total Parcels, 3 Waiting, 0 In Transit, 17 Arrived, 0 Delayed) and tabs (Parcel Management, User Admin) render",
+      "Backoffice language toggle button works (verified pre/post toggle changes lang state)"
+    ]
+  }
+}

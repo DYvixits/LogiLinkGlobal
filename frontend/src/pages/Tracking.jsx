@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { Header } from '../components/ui/Header';
-import { Package, Truck, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
+import { Search, AlertCircle, Loader2, MapPin, Package, ArrowRight } from 'lucide-react';
 import axios from 'axios';
-import { cn } from '../lib/utils';
+import { useLanguage } from '../contexts/LanguageContext';
+import { StatusBadge } from '../components/StatusBadge';
+import { Timeline } from '../components/Timeline';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
 export default function Tracking() {
+  const { t } = useLanguage();
   const [searchParams] = useSearchParams();
   const idFromUrl = searchParams.get('id');
   const [trackId, setTrackId] = useState(idFromUrl || '');
@@ -16,144 +19,99 @@ export default function Tracking() {
   const [loading, setLoading] = useState(false);
 
   const fetchTracking = async (id) => {
-    setLoading(true);
-    setError(null);
-    setResult(null);
+    setLoading(true); setError(null); setResult(null);
     try {
       const res = await axios.get(`${BACKEND_URL}/api/parcels/${id}`);
       setResult(res.data);
-    } catch (err) {
-      setError("Numéro de suivi invalide ou colis non trouvé.");
-    } finally {
-      setLoading(false);
-    }
+    } catch {
+      setError(t('invalid_id'));
+    } finally { setLoading(false); }
   };
 
-  useEffect(() => {
-    if (idFromUrl) {
-        fetchTracking(idFromUrl);
-    }
-  }, [idFromUrl]);
+  useEffect(() => { if (idFromUrl) fetchTracking(idFromUrl); }, [idFromUrl]);
 
-  const handleSearch = (e) => {
-      e.preventDefault();
-      if(trackId) fetchTracking(trackId);
-  }
-
-  const getStatusStep = (status) => {
-      const steps = ["REGISTERED", "RECEIVED_AT_DEPOT", "IN_TRANSIT", "ARRIVED", "DELIVERED"];
-      return steps.indexOf(status);
-  }
+  const handleSearch = (e) => { e.preventDefault(); if (trackId) fetchTracking(trackId); };
 
   return (
     <div className="min-h-screen bg-slate-50">
       <Header />
       <div className="container py-12 max-w-4xl">
-        <h1 className="text-4xl font-heading font-bold mb-8 text-center">SUIVRE UN COLIS</h1>
-        
-        <form onSubmit={handleSearch} className="flex max-w-lg mx-auto mb-12 shadow-lg">
-           <input 
-             type="text" 
-             placeholder="Entrez votre numéro (ex: LOGI-XXXXXX)" 
-             className="flex-1 border-2 border-r-0 border-slate-200 p-4 focus:border-slate-900 outline-none font-mono text-lg"
-             value={trackId}
-             onChange={e => setTrackId(e.target.value)}
-           />
-           <button type="submit" className="bg-accent text-white font-bold px-8 hover:bg-orange-700 transition-colors uppercase">
-             Rechercher
-           </button>
+        <div className="text-center mb-10">
+          <h1 className="text-4xl font-heading font-bold text-slate-900 mb-3">{t('track_parcel')}</h1>
+          <p className="text-slate-500 max-w-lg mx-auto">{t('track_intro')}</p>
+        </div>
+
+        <form onSubmit={handleSearch} className="flex max-w-lg mx-auto mb-10 bg-white rounded-xl border border-slate-200 shadow-sm p-1.5" data-testid="track-form">
+          <input
+            type="text"
+            data-testid="track-input"
+            placeholder="LOGI-XXXXXX"
+            className="flex-1 bg-transparent px-4 py-2.5 focus:outline-none font-mono text-slate-900 placeholder:text-slate-400"
+            value={trackId}
+            onChange={e => setTrackId(e.target.value)}
+          />
+          <button type="submit" data-testid="track-submit" className="bg-orange-600 text-white font-semibold px-6 rounded-lg hover:bg-orange-700 transition-colors flex items-center gap-2">
+            <Search className="h-4 w-4" /> {t('search')}
+          </button>
         </form>
 
-        {loading && <div className="text-center p-8">Chargement...</div>}
-        
+        {loading && <div className="flex justify-center p-12"><Loader2 className="h-8 w-8 animate-spin text-orange-600" /></div>}
+
         {error && (
-            <div className="bg-red-50 text-red-600 p-4 border border-red-200 text-center font-bold flex items-center justify-center gap-2">
-                <AlertCircle /> {error}
-            </div>
+          <div className="max-w-lg mx-auto bg-red-50 text-red-600 p-4 rounded-xl border border-red-200 text-center font-medium flex items-center justify-center gap-2" data-testid="track-error">
+            <AlertCircle className="h-5 w-5" /> {error}
+          </div>
         )}
 
         {result && (
-            <div className="bg-white border border-slate-200 shadow-sm">
-                <div className="bg-slate-900 text-white p-6 flex justify-between items-center flex-wrap gap-4">
-                    <div>
-                        <p className="text-slate-400 text-sm uppercase tracking-wider">N° de Suivi</p>
-                        <p className="font-mono text-2xl font-bold text-accent">{result.tracking_id}</p>
-                    </div>
-                    <div className="text-right">
-                        <p className="text-slate-400 text-sm uppercase tracking-wider">Estimation Arrivée</p>
-                        <p className="font-mono text-xl">{new Date(result.estimated_arrival).toLocaleDateString()}</p>
-                    </div>
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden animate-fade-in" data-testid="track-result">
+            <div className="bg-slate-900 text-white p-6 flex justify-between items-center flex-wrap gap-4">
+              <div>
+                <p className="text-slate-400 text-xs uppercase tracking-wider">{t('tracking_num')}</p>
+                <p className="font-mono text-2xl font-bold text-orange-500">{result.tracking_id}</p>
+              </div>
+              <div className="flex items-center gap-6">
+                <div className="text-right">
+                  <p className="text-slate-400 text-xs uppercase tracking-wider">{t('est_arrival')}</p>
+                  <p className="font-mono text-lg">{new Date(result.estimated_arrival).toLocaleDateString()}</p>
                 </div>
-
-                <div className="p-8">
-                    {/* Status Steps */}
-                    <div className="relative flex justify-between mb-12 mt-4">
-                        <div className="absolute top-1/2 left-0 w-full h-1 bg-slate-100 -z-10 -translate-y-1/2" />
-                        <div className={cn("absolute top-1/2 left-0 h-1 bg-green-500 -z-10 -translate-y-1/2 transition-all duration-1000", 
-                            `w-[${(getStatusStep(result.status) / 4) * 100}%]`)} />
-
-                        {[
-                            { id: "REGISTERED", label: "Enregistré" },
-                            { id: "RECEIVED_AT_DEPOT", label: "Au Dépôt" },
-                            { id: "IN_TRANSIT", label: "En Transit" },
-                            { id: "ARRIVED", label: "Arrivé" },
-                            { id: "DELIVERED", label: "Livré" }
-                        ].map((step, idx) => {
-                            const isCompleted = getStatusStep(result.status) >= idx;
-                            const isCurrent = result.status === step.id;
-                            
-                            return (
-                                <div key={step.id} className="flex flex-col items-center gap-2 bg-white px-2">
-                                    <div className={cn(
-                                        "w-8 h-8 rounded-full flex items-center justify-center border-2 transition-colors",
-                                        isCompleted ? "bg-green-500 border-green-500 text-white" : "bg-white border-slate-200 text-slate-300"
-                                    )}>
-                                        {isCompleted ? <CheckCircle2 className="w-5 h-5" /> : <div className="w-2 h-2 bg-current rounded-full"/>}
-                                    </div>
-                                    <span className={cn("text-xs font-bold uppercase", isCurrent ? "text-slate-900" : "text-slate-400")}>
-                                        {step.label}
-                                    </span>
-                                </div>
-                            )
-                        })}
-                    </div>
-
-                    <div className="grid md:grid-cols-2 gap-8 border-t border-slate-100 pt-8">
-                        <div>
-                            <h3 className="font-heading font-bold text-lg mb-4 text-slate-900">DÉTAILS ENVOI</h3>
-                            <div className="space-y-3 text-sm">
-                                <div className="flex justify-between border-b border-slate-50 pb-2">
-                                    <span className="text-slate-500">De:</span>
-                                    <span className="font-medium">{result.sender.city}</span>
-                                </div>
-                                <div className="flex justify-between border-b border-slate-50 pb-2">
-                                    <span className="text-slate-500">Vers:</span>
-                                    <span className="font-medium">{result.receiver.city}</span>
-                                </div>
-                                <div className="flex justify-between border-b border-slate-50 pb-2">
-                                    <span className="text-slate-500">Contenu:</span>
-                                    <span className="font-medium">{result.content_description}</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div>
-                             <h3 className="font-heading font-bold text-lg mb-4 text-slate-900">CONTACT</h3>
-                             <div className="space-y-3 text-sm">
-                                <div className="flex justify-between border-b border-slate-50 pb-2">
-                                    <span className="text-slate-500">Expéditeur:</span>
-                                    <span className="font-medium">{result.sender.name}</span>
-                                </div>
-                                <div className="flex justify-between border-b border-slate-50 pb-2">
-                                    <span className="text-slate-500">Destinataire:</span>
-                                    <span className="font-medium">{result.receiver.name}</span>
-                                </div>
-                             </div>
-                        </div>
-                    </div>
-                </div>
+                <StatusBadge status={result.status} className="text-sm px-3 py-1" />
+              </div>
             </div>
+
+            <div className="grid md:grid-cols-2 gap-8 p-8">
+              <div>
+                <h3 className="font-semibold text-slate-900 mb-5">{t('timeline_title')}</h3>
+                <Timeline parcel={result} />
+              </div>
+              <div className="space-y-6">
+                <div>
+                  <h3 className="font-semibold text-slate-900 mb-3">{t('details_shipment')}</h3>
+                  <div className="flex items-center gap-3 text-sm mb-3">
+                    <span className="flex items-center gap-1.5 text-slate-700"><MapPin className="h-4 w-4 text-orange-600" /> {result.sender.city}</span>
+                    <ArrowRight className="h-4 w-4 text-slate-300" />
+                    <span className="flex items-center gap-1.5 text-slate-700"><MapPin className="h-4 w-4 text-slate-900" /> {result.receiver.city}</span>
+                  </div>
+                  <Row label={t('content')} value={result.content_description} />
+                  {result.weight_kg > 0 && <Row label={t('weight')} value={`${result.weight_kg} kg`} />}
+                </div>
+                <div>
+                  <h3 className="font-semibold text-slate-900 mb-3">{t('contact_info')}</h3>
+                  <Row label={t('sender')} value={result.sender.name} />
+                  <Row label={t('receiver')} value={result.receiver.name} />
+                </div>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </div>
   );
 }
+
+const Row = ({ label, value }) => (
+  <div className="flex justify-between border-b border-slate-50 py-2 text-sm">
+    <span className="text-slate-500">{label}</span>
+    <span className="font-medium text-slate-900">{value}</span>
+  </div>
+);
